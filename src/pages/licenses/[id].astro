@@ -7,12 +7,18 @@ import Badge from '../../components/ui/Badge.astro';
 import Button from '../../components/ui/Button.astro';
 import { licenseService } from '../../lib/services/licenseService';
 import { LICENSE_STATUS_LABELS, LICENSE_TYPE_LABELS } from '../../types/crm';
+import { getCurrentUserProfile, isAdmin } from '../../lib/utils/roleHelper';
 
 const { id } = Astro.params;
 
 if (!id) {
   return Astro.redirect('/licenses');
 }
+
+// Obtener perfil del usuario
+const accessToken = Astro.cookies.get('sb-access-token')?.value;
+const userProfile = accessToken ? await getCurrentUserProfile(accessToken) : null;
+const userIsAdmin = isAdmin(userProfile);
 
 let license;
 let error = null;
@@ -40,9 +46,11 @@ try {
         <div class="page-header">
           <h1 class="page-title">Detalles de Licencia</h1>
           <div style="display: flex; gap: 1rem;">
-            <a href={`/licenses/${id}/edit`}>
-              <Button variant="secondary">Editar</Button>
-            </a>
+            {userIsAdmin && (
+              <a href={`/licenses/${id}/edit`}>
+                <Button variant="secondary">Editar</Button>
+              </a>
+            )}
             <a href="/licenses">
               <Button variant="ghost">Volver</Button>
             </a>

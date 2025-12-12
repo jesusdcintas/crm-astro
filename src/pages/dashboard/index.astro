@@ -4,22 +4,25 @@
  */
 import Layout from '../../layouts/Layout.astro';
 import { dashboardService } from '../../lib/services/dashboardService';
+import { getCurrentUserProfile, isAdmin } from '../../lib/utils/roleHelper';
 
 // Obtener estadísticas
-let stats;
+let stats = {
+  total_clients: 0,
+  total_products: 0,
+  active_licenses: 0,
+  pending_payment_licenses: 0
+};
+
+// Obtener perfil del usuario
+const accessToken = Astro.cookies.get('sb-access-token')?.value;
+const userProfile = accessToken ? await getCurrentUserProfile(accessToken) : null;
+const userIsAdmin = isAdmin(userProfile);
+
 try {
-  stats = await dashboardService.getStatsManual();
+  stats = await dashboardService.getStats();
 } catch (error) {
   console.error('Error al obtener estadísticas:', error);
-  stats = {
-    total_clients: 0,
-    total_products: 0,
-    total_licenses: 0,
-    active_licenses: 0,
-    inactive_licenses: 0,
-    pending_payment_licenses: 0,
-    expired_licenses: 0
-  };
 }
 ---
 
@@ -84,41 +87,56 @@ try {
       </a>
     </div>
 
-    <!-- Accesos rápidos -->
-    <div class="quick-actions">
-      <h2>Accesos Rápidos</h2>
-      <div class="actions-grid">
-        <a href="/clients" class="action-card">
-          <div class="action-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
-            </svg>
-          </div>
-          <h3>Gestionar Clientes</h3>
-          <p>Ver, crear y editar clientes</p>
-        </a>
+    <!-- Accesos rápidos - Solo para Admin -->
+    {userIsAdmin && (
+      <div class="quick-actions">
+        <h2 style="margin-bottom: 1.5rem;">Accesos Rápidos</h2>
+        <div class="actions-grid">
+          <a href="/clients/new" class="action-card">
+            <div class="action-icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
+              </svg>
+            </div>
+            <div>
+              <h3>Nuevo Cliente</h3>
+              <p>Registrar un nuevo cliente</p>
+            </div>
+          </a>
 
-        <a href="/products" class="action-card">
-          <div class="action-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
-            </svg>
-          </div>
-          <h3>Gestionar Productos</h3>
-          <p>Catálogo de productos y precios</p>
-        </a>
+          <a href="/products/new" class="action-card">
+            <div class="action-icon" style="background: linear-gradient(135deg, #ec4899, #f43f5e);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              </svg>
+            </div>
+            <div>
+              <h3>Nuevo Producto</h3>
+              <p>Añadir un nuevo producto</p>
+            </div>
+          </a>
 
-        <a href="/licenses" class="action-card">
-          <div class="action-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
-            </svg>
-          </div>
-          <h3>Gestionar Licencias</h3>
-          <p>Asignar y controlar licencias</p>
-        </a>
+          <a href="/licenses/new" class="action-card">
+            <div class="action-icon" style="background: linear-gradient(135deg, #10b981, #14b8a6);">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+              </svg>
+            </div>
+            <div>
+              <h3>Nueva Licencia</h3>
+              <p>Asignar una nueva licencia</p>
+            </div>
+          </a>
+        </div>
       </div>
-    </div>
+    )}
+
+    <!-- Mensaje para Staff -->
+    {!userIsAdmin && (
+      <div class="info-card">
+        <p><strong>Modo Solo Lectura</strong> - Tu rol de Staff te permite ver toda la información pero no realizar cambios.</p>
+      </div>
+    )}
   </div>
 </Layout>
 
