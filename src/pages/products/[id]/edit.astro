@@ -1,0 +1,129 @@
+---
+/**
+ * Formulario para editar producto
+ */
+import Layout from '../../../layouts/Layout.astro';
+import Input from '../../../components/ui/Input.astro';
+import Button from '../../../components/ui/Button.astro';
+import { productService } from '../../../lib/services/productService';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/products');
+}
+
+let product;
+let error = '';
+
+try {
+  product = await productService.getById(id);
+  if (!product) {
+    return Astro.redirect('/products');
+  }
+} catch (e) {
+  console.error('Error al obtener producto:', e);
+  return Astro.redirect('/products');
+}
+
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const name = formData.get('name')?.toString() || '';
+    const description = formData.get('description')?.toString() || '';
+    const price_one_payment = parseFloat(formData.get('price_one_payment')?.toString() || '0');
+    const price_subscription = parseFloat(formData.get('price_subscription')?.toString() || '0');
+
+    if (!name) {
+      error = 'El nombre es obligatorio';
+    } else if (price_one_payment < 0 || price_subscription < 0) {
+      error = 'Los precios no pueden ser negativos';
+    } else {
+      await productService.update(id, { name, description, price_one_payment, price_subscription });
+      return Astro.redirect('/products');
+    }
+  } catch (e) {
+    console.error('Error al actualizar producto:', e);
+    error = 'Error al actualizar el producto. Verifica los datos.';
+  }
+}
+---
+
+<Layout title={`Editar: ${product.name} - SoftControl CRM`}>
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Editar Producto</h1>
+    </div>
+
+    {error && (
+      <div class="alert alert-error">{error}</div>
+    )}
+
+    <div class="card" style="max-width: 600px;">
+      <form method="POST">
+        <Input
+          label="Nombre del Producto"
+          name="name"
+          required
+          value={product.name}
+          placeholder="Microsoft Office Professional"
+        />
+        
+        <div style="margin-bottom: 1rem;">
+          <label for="description" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+            Descripción
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            rows="3"
+            placeholder="Descripción del producto..."
+            style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-family: inherit; font-size: 0.9375rem;"
+          >{product.description || ''}</textarea>
+        </div>
+        
+        <Input
+          type="number"
+          label="Precio Pago Único (€)"
+          name="price_one_payment"
+          required
+          value={product.price_one_payment.toString()}
+          step="0.01"
+          min="0"
+        />
+        
+        <Input
+          type="number"
+          label="Precio Suscripción Mensual (€)"
+          name="price_subscription"
+          required
+          value={product.price_subscription.toString()}
+          step="0.01"
+          min="0"
+        />
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <Button type="submit" variant="primary">
+            Guardar Cambios
+          </Button>
+          <a href="/products" style="text-decoration: none;">
+            <Button type="button" variant="secondary">
+              Cancelar
+            </Button>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .alert-error {
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+</style>

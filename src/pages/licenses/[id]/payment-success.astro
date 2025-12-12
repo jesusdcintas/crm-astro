@@ -1,0 +1,191 @@
+---
+/**
+ * Página de éxito de pago
+ */
+import Layout from '../../../layouts/Layout.astro';
+import { licenseService } from '../../../lib/services/licenseService';
+import { getCheckoutSession } from '../../../lib/services/stripeService';
+
+const { id } = Astro.params;
+const sessionId = Astro.url.searchParams.get('session_id');
+
+let license;
+let paymentSuccess = false;
+let error = null;
+
+if (!id) {
+  return Astro.redirect('/licenses');
+}
+
+try {
+  license = await licenseService.getFullById(id);
+  
+  if (!license) {
+    return Astro.redirect('/licenses');
+  }
+
+  // Verificar sesión de Stripe si existe
+  if (sessionId) {
+    const result = await getCheckoutSession(sessionId);
+    if (result.success && result.session) {
+      paymentSuccess = result.session.payment_status === 'paid';
+      
+      // Actualizar licencia a activa si el pago fue exitoso
+      if (paymentSuccess && license.status !== 'activa') {
+        await licenseService.update(id, { status: 'activa' });
+        license.status = 'activa';
+      }
+    }
+  }
+} catch (e) {
+  console.error('Error:', e);
+  error = 'Error al procesar el pago';
+}
+---
+
+<Layout title="Pago Completado - SoftControl CRM">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Pago Completado</h1>
+    </div>
+
+    {paymentSuccess ? (
+      <div class="success-card">
+        <div class="success-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h2>¡Pago Exitoso!</h2>
+        <p>La licencia ha sido activada correctamente.</p>
+        
+        <div class="license-info">
+          <p><strong>Cliente:</strong> {license?.client_name}</p>
+          <p><strong>Producto:</strong> {license?.product_name}</p>
+          <p><strong>Tipo:</strong> {license?.type === 'licencia_unica' ? 'Licencia Única' : 'Suscripción Mensual'}</p>
+          <p><strong>Estado:</strong> <span class="status-active">Activa</span></p>
+        </div>
+
+        <div class="actions">
+          <a href={`/licenses/${id}`} class="btn-primary">Ver Licencia</a>
+          <a href="/licenses" class="btn-secondary">Ver Todas las Licencias</a>
+        </div>
+      </div>
+    ) : (
+      <div class="info-card">
+        <div class="info-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+          </svg>
+        </div>
+        <h2>Procesando Pago</h2>
+        <p>El pago está siendo procesado. Esto puede tomar unos momentos.</p>
+        <a href={`/licenses/${id}`} class="btn-primary">Ver Licencia</a>
+      </div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .success-card, .info-card {
+    max-width: 600px;
+    margin: 2rem auto;
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+    text-align: center;
+  }
+
+  .success-card {
+    border-color: #10b981;
+  }
+
+  .success-icon, .info-icon {
+    width: 5rem;
+    height: 5rem;
+    margin: 0 auto 1.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .success-icon {
+    background: #d1fae5;
+    color: #10b981;
+  }
+
+  .info-icon {
+    background: #dbeafe;
+    color: #3b82f6;
+  }
+
+  .success-icon svg, .info-icon svg {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  h2 {
+    font-size: 1.875rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+  }
+
+  p {
+    color: var(--color-text-light);
+    margin-bottom: 1.5rem;
+  }
+
+  .license-info {
+    background: var(--color-bg-alt);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin: 2rem 0;
+    text-align: left;
+  }
+
+  .license-info p {
+    margin-bottom: 0.75rem;
+    color: var(--color-text);
+  }
+
+  .status-active {
+    color: #10b981;
+    font-weight: 600;
+  }
+
+  .actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+  }
+
+  .btn-primary, .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    text-decoration: none;
+    transition: var(--transition);
+  }
+
+  .btn-primary {
+    background: var(--color-primary);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-primary-dark);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-bg-alt);
+  }
+</style>

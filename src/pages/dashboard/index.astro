@@ -1,164 +1,254 @@
 ---
+/**
+ * Dashboard Principal - Mini-CRM SoftControl
+ */
 import Layout from '../../layouts/Layout.astro';
+import { dashboardService } from '../../lib/services/dashboardService';
+
+// Obtener estadísticas
+let stats;
+try {
+  stats = await dashboardService.getStatsManual();
+} catch (error) {
+  console.error('Error al obtener estadísticas:', error);
+  stats = {
+    total_clients: 0,
+    total_products: 0,
+    total_licenses: 0,
+    active_licenses: 0,
+    inactive_licenses: 0,
+    pending_payment_licenses: 0,
+    expired_licenses: 0
+  };
+}
 ---
 
-<Layout title="Dashboard - CRM Ventas">
-  <div class="dashboard-container">
-    <header class="dashboard-header">
-      <div>
-        <h1>Dashboard</h1>
-        <p>Bienvenido al CRM de Ventas</p>
-      </div>
-      <a href="/customers/crear" class="btn-crear-cliente">
-        + Crear Cliente
-      </a>
-    </header>
-
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3>Ventas Totales</h3>
-        <p class="stat-value">$0</p>
-        <span class="stat-change">+0%</span>
-      </div>
-
-      <div class="stat-card">
-        <h3>Clientes Activos</h3>
-        <p class="stat-value">0</p>
-        <span class="stat-change">+0%</span>
-      </div>
-
-      <div class="stat-card">
-        <h3>Productos</h3>
-        <p class="stat-value">0</p>
-        <span class="stat-change">+0%</span>
-      </div>
-
-      <div class="stat-card">
-        <h3>Ingresos del Mes</h3>
-        <p class="stat-value">$0</p>
-        <span class="stat-change">+0%</span>
-      </div>
+<Layout title="Dashboard - SoftControl CRM">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Dashboard</h1>
     </div>
 
-    <div class="dashboard-content">
-      <section class="recent-sales">
-        <h2>Ventas Recientes</h2>
-        <p>No hay ventas registradas</p>
-      </section>
+    <!-- Tarjetas de estadísticas -->
+    <div class="stats-grid">
+      <!-- Total Clientes -->
+      <a href="/clients" class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #6366f1, #8b5cf6);">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+          </svg>
+        </div>
+        <div class="stat-content">
+          <p class="stat-label">Total Clientes</p>
+          <p class="stat-value">{stats.total_clients}</p>
+        </div>
+      </a>
 
-      <section class="top-products">
-        <h2>Productos Más Vendidos</h2>
-        <p>No hay datos disponibles</p>
-      </section>
+      <!-- Total Productos -->
+      <a href="/products" class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #ec4899, #f43f5e);">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+          </svg>
+        </div>
+        <div class="stat-content">
+          <p class="stat-label">Total Productos</p>
+          <p class="stat-value">{stats.total_products}</p>
+        </div>
+      </a>
+
+      <!-- Licencias Activas -->
+      <a href="/licenses?status=activa" class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #10b981, #14b8a6);">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="stat-content">
+          <p class="stat-label">Licencias Activas</p>
+          <p class="stat-value">{stats.active_licenses}</p>
+        </div>
+      </a>
+
+      <!-- Licencias Pendientes -->
+      <a href="/licenses?status=pendiente_pago" class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b, #f97316);">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div class="stat-content">
+          <p class="stat-label">Pendientes de Pago</p>
+          <p class="stat-value">{stats.pending_payment_licenses}</p>
+        </div>
+      </a>
+    </div>
+
+    <!-- Accesos rápidos -->
+    <div class="quick-actions">
+      <h2>Accesos Rápidos</h2>
+      <div class="actions-grid">
+        <a href="/clients" class="action-card">
+          <div class="action-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
+            </svg>
+          </div>
+          <h3>Gestionar Clientes</h3>
+          <p>Ver, crear y editar clientes</p>
+        </a>
+
+        <a href="/products" class="action-card">
+          <div class="action-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+            </svg>
+          </div>
+          <h3>Gestionar Productos</h3>
+          <p>Catálogo de productos y precios</p>
+        </a>
+
+        <a href="/licenses" class="action-card">
+          <div class="action-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+            </svg>
+          </div>
+          <h3>Gestionar Licencias</h3>
+          <p>Asignar y controlar licencias</p>
+        </a>
+      </div>
     </div>
   </div>
 </Layout>
 
 <style>
-  .dashboard-container {
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-
-  .dashboard-header {
-    margin-bottom: 2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 1.5rem;
-  }
-
-  .dashboard-header h1 {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-  }
-
-  .btn-crear-cliente {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
-    background: #3b82f6;
-    color: white;
-    border-radius: 8px;
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 1rem;
-    transition: all 0.2s;
-    white-space: nowrap;
-  }
-
-  .btn-crear-cliente:hover {
-    background: #2563eb;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-  }
-
-  .btn-crear-cliente:active {
-    transform: translateY(0);
-  }
-
   .stats-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
     gap: 1.5rem;
-    margin-bottom: 2rem;
+    margin-bottom: 3rem;
   }
 
   .stat-card {
     background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
     padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
   }
 
-  .stat-card h3 {
+  .stat-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+    border-color: var(--color-primary);
+  }
+
+  .stat-icon {
+    width: 4rem;
+    height: 4rem;
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .icon {
+    width: 2rem;
+    height: 2rem;
+    color: white;
+  }
+
+  .stat-content {
+    flex: 1;
+  }
+
+  .stat-label {
     font-size: 0.875rem;
-    color: #666;
-    margin-bottom: 0.5rem;
+    color: var(--color-text-light);
+    margin-bottom: 0.25rem;
   }
 
   .stat-value {
     font-size: 2rem;
-    font-weight: bold;
-    margin: 0.5rem 0;
+    font-weight: 700;
+    color: var(--color-text);
   }
 
-  .stat-change {
-    color: #10b981;
-    font-size: 0.875rem;
+  .quick-actions {
+    margin-top: 2rem;
   }
 
-  .dashboard-content {
+  .quick-actions h2 {
+    margin-bottom: 1.5rem;
+    color: var(--color-text);
+  }
+
+  .actions-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 1.5rem;
   }
 
-  section {
+  .action-card {
     background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    text-align: center;
+    transition: var(--transition);
+    text-decoration: none;
+    color: inherit;
   }
 
-  section h2 {
-    margin-bottom: 1rem;
+  .action-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-4px);
+    border-color: var(--color-primary);
+  }
+
+  .action-icon {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1rem;
+    background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    border-radius: var(--radius);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .action-icon svg {
+    width: 2rem;
+    height: 2rem;
+    color: white;
+  }
+
+  .action-card h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+  }
+
+  .action-card p {
+    color: var(--color-text-light);
+    font-size: 0.9375rem;
   }
 
   @media (max-width: 768px) {
-    .dashboard-header {
-      flex-direction: column;
-      align-items: flex-start;
+    .stats-grid {
+      grid-template-columns: 1fr;
     }
 
-    .btn-crear-cliente {
-      width: 100%;
-      justify-content: center;
-    }
-
-    .dashboard-content {
+    .actions-grid {
       grid-template-columns: 1fr;
     }
   }

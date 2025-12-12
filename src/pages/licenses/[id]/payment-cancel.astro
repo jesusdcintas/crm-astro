@@ -1,0 +1,147 @@
+---
+/**
+ * Página de cancelación de pago
+ */
+import Layout from '../../../layouts/Layout.astro';
+import { licenseService } from '../../../lib/services/licenseService';
+
+const { id } = Astro.params;
+
+let license;
+
+if (!id) {
+  return Astro.redirect('/licenses');
+}
+
+try {
+  license = await licenseService.getFullById(id);
+  
+  if (!license) {
+    return Astro.redirect('/licenses');
+  }
+} catch (e) {
+  console.error('Error:', e);
+  return Astro.redirect('/licenses');
+}
+---
+
+<Layout title="Pago Cancelado - SoftControl CRM">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Pago Cancelado</h1>
+    </div>
+
+    <div class="cancel-card">
+      <div class="cancel-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </div>
+      <h2>Pago Cancelado</h2>
+      <p>El proceso de pago ha sido cancelado. La licencia permanece en estado pendiente.</p>
+      
+      <div class="license-info">
+        <p><strong>Cliente:</strong> {license.client_name}</p>
+        <p><strong>Producto:</strong> {license.product_name}</p>
+        <p><strong>Estado:</strong> <span class="status-pending">Pendiente de Pago</span></p>
+      </div>
+
+      <div class="actions">
+        <a href={`/licenses/${id}`} class="btn-primary">Reintentar Pago</a>
+        <a href="/licenses" class="btn-secondary">Volver a Licencias</a>
+      </div>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .cancel-card {
+    max-width: 600px;
+    margin: 2rem auto;
+    background: white;
+    border: 1px solid #fca5a5;
+    border-radius: var(--radius-lg);
+    padding: 3rem;
+    text-align: center;
+  }
+
+  .cancel-icon {
+    width: 5rem;
+    height: 5rem;
+    margin: 0 auto 1.5rem;
+    border-radius: 50%;
+    background: #fee2e2;
+    color: #ef4444;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cancel-icon svg {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  h2 {
+    font-size: 1.875rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+  }
+
+  p {
+    color: var(--color-text-light);
+    margin-bottom: 1.5rem;
+  }
+
+  .license-info {
+    background: var(--color-bg-alt);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin: 2rem 0;
+    text-align: left;
+  }
+
+  .license-info p {
+    margin-bottom: 0.75rem;
+    color: var(--color-text);
+  }
+
+  .status-pending {
+    color: #f59e0b;
+    font-weight: 600;
+  }
+
+  .actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 2rem;
+  }
+
+  .btn-primary, .btn-secondary {
+    padding: 0.75rem 1.5rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    text-decoration: none;
+    transition: var(--transition);
+  }
+
+  .btn-primary {
+    background: var(--color-primary);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: var(--color-primary-dark);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-bg-alt);
+  }
+</style>

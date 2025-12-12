@@ -1,0 +1,233 @@
+---
+/**
+ * Formulario para crear nueva licencia
+ */
+import Layout from '../../layouts/Layout.astro';
+import Input from '../../components/ui/Input.astro';
+import Select from '../../components/ui/Select.astro';
+import Button from '../../components/ui/Button.astro';
+import { licenseService } from '../../lib/services/licenseService';
+import { clientService } from '../../lib/services/clientService';
+import { productService } from '../../lib/services/productService';
+
+// Obtener clientes y productos para los dropdowns
+let clients = [];
+let products = [];
+let error = '';
+
+try {
+  clients = await clientService.getAll();
+  products = await productService.getAll();
+} catch (e) {
+  console.error('Error al cargar datos:', e);
+  error = 'Error al cargar clientes y productos';
+}
+
+// Pre-seleccionar cliente si viene de la URL
+const preselectedClientId = Astro.url.searchParams.get('client_id');
+
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const client_id = formData.get('client_id')?.toString() || '';
+    const product_id = formData.get('product_id')?.toString() || '';
+    const type = formData.get('type')?.toString() as 'licencia_unica' | 'suscripcion';
+    const start_date = formData.get('start_date')?.toString() || '';
+    const end_date = formData.get('end_date')?.toString() || '';
+    const status = formData.get('status')?.toString() as 'activa' | 'inactiva' | 'pendiente_pago';
+
+    if (!client_id || !product_id || !type || !start_date) {
+      error = 'Todos los campos obligatorios deben completarse';
+    } else {
+      await licenseService.create({
+        client_id,
+        product_id,
+        type,
+        start_date,
+        end_date: end_date || undefined,
+        status: status || 'activa'
+      });
+      return Astro.redirect('/licenses');
+    }
+  } catch (e) {
+    console.error('Error al crear licencia:', e);
+    error = 'Error al crear la licencia. Verifica los datos.';
+  }
+}
+
+// Preparar opciones para los selects
+const clientOptions = clients.map(c => ({ value: c.id, label: `${c.name} (${c.email})` }));
+const productOptions = products.map(p => ({ value: p.id, label: p.name }));
+---
+
+<Layout title="Nueva Licencia - SoftControl CRM">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Nueva Licencia</h1>
+    </div>
+
+    {error && (
+      <div class="alert alert-error">{error}</div>
+    )}
+
+    {clients.length === 0 && (
+      <div class="alert alert-warning">
+        <strong>No hay clientes registrados.</strong> Debes crear al menos un cliente antes de asignar licencias.
+        <a href="/clients/new" style="color: inherit; text-decoration: underline;">Crear cliente</a>
+      </div>
+    )}
+
+    {products.length === 0 && (
+      <div class="alert alert-warning">
+        <strong>No hay productos registrados.</strong> Debes crear al menos un producto antes de asignar licencias.
+        <a href="/products/new" style="color: inherit; text-decoration: underline;">Crear producto</a>
+      </div>
+    )}
+
+    {clients.length > 0 && products.length > 0 && (
+      <div class="card" style="max-width: 600px;">
+        <form method="POST" id="licenseForm">
+          <Select
+            label="Cliente"
+            name="client_id"
+            options={clientOptions}
+            required
+            value={preselectedClientId || ''}
+            placeholder="Selecciona un cliente"
+          />
+          
+          <Select
+            label="Producto"
+            name="product_id"
+            options={productOptions}
+            required
+            placeholder="Selecciona un producto"
+          />
+
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+              Tipo de Licencia <span style="color: var(--color-danger);">*</span>
+            </label>
+            <div style="display: flex; gap: 1.5rem;">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="radio" name="type" value="licencia_unica" required id="type_unica" onchange="toggleEndDate()"/>
+                <span>Licencia Única (Pago único)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                <input type="radio" name="type" value="suscripcion" required id="type_suscripcion" onchange="toggleEndDate()"/>
+                <span>Suscripción (Pago mensual)</span>
+              </label>
+            </div>
+          </div>
+
+          <Input
+            type="date"
+            label="Fecha de Inicio"
+            name="start_date"
+            required
+            value={new Date().toISOString().split('T')[0]}
+          />
+
+          <div id="endDateContainer" style="display: none;">
+            <Input
+              type="date"
+              label="Fecha de Fin"
+              name="end_date"
+              id="end_date"
+            />
+          </div>
+
+          <div style="margin-bottom: 1rem;">
+            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+              Estado
+            </label>
+            <select name="status" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-size: 0.9375rem;">
+              <option value="activa">Activa</option>
+              <option value="inactiva">Inactiva</option>
+              <option value="pendiente_pago">Pendiente de Pago</option>
+            </select>
+          </div>
+
+          <div class="info-box">
+            <p><strong>Nota:</strong></p>
+            <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
+              <li>Las licencias únicas no requieren fecha de fin (son perpetuas)</li>
+              <li>Las suscripciones deben tener una fecha de fin</li>
+            </ul>
+          </div>
+
+          <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+            <Button type="submit" variant="primary">
+              Crear Licencia
+            </Button>
+            <a href="/licenses" style="text-decoration: none;">
+              <Button type="button" variant="secondary">
+                Cancelar
+              </Button>
+            </a>
+          </div>
+        </form>
+      </div>
+    )}
+  </div>
+</Layout>
+
+<script>
+  function toggleEndDate() {
+    const typeUnica = document.getElementById('type_unica') as HTMLInputElement;
+    const typeSuscripcion = document.getElementById('type_suscripcion') as HTMLInputElement;
+    const endDateContainer = document.getElementById('endDateContainer');
+    const endDateInput = document.getElementById('end_date') as HTMLInputElement;
+
+    if (typeSuscripcion?.checked) {
+      endDateContainer!.style.display = 'block';
+      endDateInput.required = true;
+    } else {
+      endDateContainer!.style.display = 'none';
+      endDateInput.required = false;
+      endDateInput.value = '';
+    }
+  }
+
+  // Hacer la función global
+  (window as any).toggleEndDate = toggleEndDate;
+</script>
+
+<style>
+  .alert-error {
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+
+  .alert-warning {
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fcd34d;
+  }
+
+  .info-box {
+    padding: 1rem;
+    background: #e0f2fe;
+    border: 1px solid #7dd3fc;
+    border-radius: var(--radius);
+    margin-bottom: 1rem;
+  }
+
+  .info-box p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: #075985;
+  }
+
+  .info-box ul li {
+    font-size: 0.875rem;
+    color: #075985;
+  }
+</style>

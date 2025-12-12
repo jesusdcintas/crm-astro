@@ -1,8 +1,13 @@
 ---
-import VictoriaCRMWelcome from '../components/VictoriaCRMWelcome.astro';
-import Layout from '../layouts/Layout.astro';
----
+/**
+ * Página principal - Redirige al dashboard o login
+ */
+const { cookies, redirect } = Astro;
+const accessToken = cookies.get('sb-access-token');
 
-<Layout>
-	<VictoriaCRMWelcome title="Victoria CRM" />
-</Layout>
+if (accessToken) {
+  return redirect('/dashboard');
+} else {
+  return redirect('/auth/login');
+}
+---

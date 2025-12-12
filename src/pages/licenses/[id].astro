@@ -1,0 +1,307 @@
+---
+/**
+ * Ver detalles de una licencia con opción de pago
+ */
+import Layout from '../../layouts/Layout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import { licenseService } from '../../lib/services/licenseService';
+import { LICENSE_STATUS_LABELS, LICENSE_TYPE_LABELS } from '../../types/crm';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/licenses');
+}
+
+let license;
+let error = null;
+
+try {
+  license = await licenseService.getFullById(id);
+  
+  if (!license) {
+    return Astro.redirect('/licenses');
+  }
+} catch (e) {
+  console.error('Error al obtener licencia:', e);
+  error = 'No se pudo cargar la licencia';
+}
+---
+
+<Layout title={`Licencia: ${license?.product_name || 'Detalles'} - SoftControl CRM`}>
+  <div class="container">
+    {error && (
+      <div class="alert alert-error">{error}</div>
+    )}
+
+    {license && (
+      <>
+        <div class="page-header">
+          <h1 class="page-title">Detalles de Licencia</h1>
+          <div style="display: flex; gap: 1rem;">
+            <a href={`/licenses/${id}/edit`}>
+              <Button variant="secondary">Editar</Button>
+            </a>
+            <a href="/licenses">
+              <Button variant="ghost">Volver</Button>
+            </a>
+          </div>
+        </div>
+
+        <!-- Información de la Licencia -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <h2 style="margin-bottom: 1.5rem;">Información de la Licencia</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Cliente</label>
+              <p><strong>{license.client_name}</strong></p>
+              <p style="font-size: 0.875rem; color: var(--color-text-light);">{license.client_email}</p>
+            </div>
+            <div class="info-item">
+              <label>Producto</label>
+              <p>{license.product_name}</p>
+            </div>
+            <div class="info-item">
+              <label>Tipo</label>
+              <p>{LICENSE_TYPE_LABELS[license.type]}</p>
+            </div>
+            <div class="info-item">
+              <label>Precio</label>
+              <p><strong>{license.price.toFixed(2)} €</strong></p>
+              <p style="font-size: 0.875rem; color: var(--color-text-light);">
+                {license.type === 'suscripcion' ? '/mes' : 'pago único'}
+              </p>
+            </div>
+            <div class="info-item">
+              <label>Fecha Inicio</label>
+              <p>{new Date(license.start_date).toLocaleDateString('es-ES')}</p>
+            </div>
+            <div class="info-item">
+              <label>Fecha Fin</label>
+              <p>{license.end_date ? new Date(license.end_date).toLocaleDateString('es-ES') : 'Sin límite'}</p>
+            </div>
+            <div class="info-item">
+              <label>Estado</label>
+              <div>
+                <Badge color={
+                  license.status === 'activa' ? 'green' : 
+                  license.status === 'pendiente_pago' ? 'yellow' : 'gray'
+                }>
+                  {LICENSE_STATUS_LABELS[license.status]}
+                </Badge>
+                {license.is_expired && (
+                  <Badge color="red" style="margin-left: 0.5rem;">Vencida</Badge>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección de Pago -->
+        {license.status === 'pendiente_pago' && (
+          <div class="card payment-card">
+            <h2 style="margin-bottom: 1rem;">💳 Procesar Pago</h2>
+            <p style="color: var(--color-text-light); margin-bottom: 1.5rem;">
+              Esta licencia está pendiente de pago. Haz clic en el botón para proceder al pago seguro con Stripe.
+            </p>
+            
+            <div class="payment-info">
+              <div class="payment-detail">
+                <span>Producto:</span>
+                <strong>{license.product_name}</strong>
+              </div>
+              <div class="payment-detail">
+                <span>Tipo:</span>
+                <strong>{LICENSE_TYPE_LABELS[license.type]}</strong>
+              </div>
+              <div class="payment-detail total">
+                <span>Total:</span>
+                <strong class="amount">{license.price.toFixed(2)} €</strong>
+              </div>
+            </div>
+
+            <button id="checkout-button" class="btn-checkout">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 1.25rem; height: 1.25rem;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+              </svg>
+              Pagar con Stripe
+            </button>
+
+            <p style="font-size: 0.75rem; color: var(--color-text-muted); margin-top: 1rem; text-align: center;">
+              🔒 Pago seguro procesado por Stripe
+            </p>
+          </div>
+        )}
+
+        {license.status === 'activa' && (
+          <div class="card success-card">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <div class="success-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 style="margin: 0 0 0.25rem 0;">Licencia Activa</h3>
+                <p style="margin: 0; color: var(--color-text-light); font-size: 0.875rem;">
+                  Esta licencia ha sido pagada y está activa.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
+    )}
+  </div>
+</Layout>
+
+<script define:vars={{ licenseId: id }}>
+  document.getElementById('checkout-button')?.addEventListener('click', async () => {
+    const button = document.getElementById('checkout-button');
+    if (!button) return;
+    
+    button.textContent = 'Procesando...';
+    button.disabled = true;
+
+    try {
+      const response = await fetch('/api/stripe/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ licenseId })
+      });
+
+      const data = await response.json();
+
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert('Error al crear sesión de pago');
+        button.textContent = 'Pagar con Stripe';
+        button.disabled = false;
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error al procesar el pago');
+      button.textContent = 'Pagar con Stripe';
+      button.disabled = false;
+    }
+  });
+</script>
+
+<style>
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .info-item label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-light);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .info-item p {
+    font-size: 1rem;
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .payment-card {
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid #3b82f6;
+  }
+
+  .success-card {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border: 2px solid #10b981;
+  }
+
+  .payment-info {
+    background: white;
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .payment-detail {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .payment-detail:last-child {
+    border-bottom: none;
+  }
+
+  .payment-detail.total {
+    padding-top: 1rem;
+    margin-top: 0.5rem;
+    border-top: 2px solid var(--color-border);
+  }
+
+  .amount {
+    font-size: 1.5rem;
+    color: var(--color-primary);
+  }
+
+  .btn-checkout {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 1rem 2rem;
+    background: #635bff;
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .btn-checkout:hover:not(:disabled) {
+    background: #5145e5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 91, 255, 0.4);
+  }
+
+  .btn-checkout:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .success-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    background: #d1fae5;
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .success-icon svg {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .alert-error {
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+</style>

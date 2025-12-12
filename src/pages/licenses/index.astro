@@ -1,0 +1,250 @@
+---
+/**
+ * Listado de Licencias - Mini-CRM SoftControl
+ */
+import Layout from '../../layouts/Layout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import { licenseService } from '../../lib/services/licenseService';
+import { LICENSE_STATUS_LABELS, LICENSE_TYPE_LABELS } from '../../types/crm';
+
+// Obtener filtro de la URL
+const statusFilter = Astro.url.searchParams.get('status');
+
+let licenses = [];
+let error = null;
+
+try {
+  if (statusFilter) {
+    licenses = await licenseService.getByStatus(statusFilter as any);
+  } else {
+    licenses = await licenseService.getAll();
+  }
+} catch (e) {
+  console.error('Error al obtener licencias:', e);
+  error = 'No se pudieron cargar las licencias.';
+}
+---
+
+<Layout title="Licencias - SoftControl CRM">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Licencias</h1>
+      <a href="/licenses/new" class="btn-primary">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 1.25rem; height: 1.25rem;">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+        </svg>
+        Nueva Licencia
+      </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters">
+      <a href="/licenses" class={!statusFilter ? 'filter-active' : 'filter'}>
+        Todas
+      </a>
+      <a href="/licenses?status=activa" class={statusFilter === 'activa' ? 'filter-active' : 'filter'}>
+        Activas
+      </a>
+      <a href="/licenses?status=inactiva" class={statusFilter === 'inactiva' ? 'filter-active' : 'filter'}>
+        Inactivas
+      </a>
+      <a href="/licenses?status=pendiente_pago" class={statusFilter === 'pendiente_pago' ? 'filter-active' : 'filter'}>
+        Pendientes de Pago
+      </a>
+    </div>
+
+    {error && (
+      <div class="alert alert-error">{error}</div>
+    )}
+
+    {!error && licenses.length === 0 && (
+      <div class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="empty-icon">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+        </svg>
+        <h3>No hay licencias {statusFilter ? `con estado "${LICENSE_STATUS_LABELS[statusFilter]}"` : 'registradas'}</h3>
+        <p>Comienza creando tu primera licencia</p>
+        <a href="/licenses/new" class="btn-primary" style="margin-top: 1rem;">Crear Licencia</a>
+      </div>
+    )}
+
+    {!error && licenses.length > 0 && (
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Producto</th>
+              <th>Tipo</th>
+              <th>Fecha Inicio</th>
+              <th>Fecha Fin</th>
+              <th>Estado</th>
+              <th>Precio</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            {licenses.map(license => (
+              <tr>
+                <td>
+                  <strong>{license.client_name}</strong><br/>
+                  <small style="color: var(--color-text-light);">{license.client_email}</small>
+                </td>
+                <td>{license.product_name}</td>
+                <td>{LICENSE_TYPE_LABELS[license.type]}</td>
+                <td>{new Date(license.start_date).toLocaleDateString('es-ES')}</td>
+                <td>{license.end_date ? new Date(license.end_date).toLocaleDateString('es-ES') : '-'}</td>
+                <td>
+                  <Badge color={
+                    license.status === 'activa' ? 'green' : 
+                    license.status === 'pendiente_pago' ? 'yellow' : 'gray'
+                  }>
+                    {LICENSE_STATUS_LABELS[license.status]}
+                  </Badge>
+                  {license.is_expired && (
+                    <Badge color="red" style="margin-left: 0.5rem;">Vencida</Badge>
+                  )}
+                </td>
+                <td>{license.price.toFixed(2)} €</td>
+                <td>
+                  <div class="actions">
+                    <a href={`/licenses/${license.id}`} class="btn-action" title="Ver detalles">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    </a>
+                    <a href={`/licenses/${license.id}/edit`} class="btn-action" title="Editar">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                      </svg>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: var(--transition);
+  }
+
+  .btn-primary:hover {
+    background: var(--color-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    color: white;
+  }
+
+  .filters {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .filter, .filter-active {
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: var(--transition);
+  }
+
+  .filter {
+    background: white;
+    color: var(--color-text-light);
+    border: 1px solid var(--color-border);
+  }
+
+  .filter:hover {
+    background: var(--color-bg-alt);
+    color: var(--color-text);
+  }
+
+  .filter-active {
+    background: var(--color-primary);
+    color: white;
+    border: 1px solid var(--color-primary);
+  }
+
+  .alert-error {
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .empty-icon {
+    width: 4rem;
+    height: 4rem;
+    color: var(--color-text-muted);
+    margin: 0 auto 1rem;
+  }
+
+  .empty-state h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-text);
+  }
+
+  .empty-state p {
+    color: var(--color-text-light);
+    margin-bottom: 1rem;
+  }
+
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--color-text-light);
+    transition: var(--transition);
+  }
+
+  .btn-action:hover {
+    background: var(--color-bg-alt);
+    color: var(--color-primary);
+  }
+
+  .btn-action svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+</style>

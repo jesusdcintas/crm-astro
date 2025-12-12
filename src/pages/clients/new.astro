@@ -1,0 +1,100 @@
+---
+/**
+ * Formulario para crear nuevo cliente
+ */
+import Layout from '../../layouts/Layout.astro';
+import Input from '../../components/ui/Input.astro';
+import Button from '../../components/ui/Button.astro';
+import { clientService } from '../../lib/services/clientService';
+
+let error = '';
+let success = false;
+
+// Si es POST, crear el cliente
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const name = formData.get('name')?.toString() || '';
+    const email = formData.get('email')?.toString() || '';
+    const phone = formData.get('phone')?.toString() || '';
+    const company = formData.get('company')?.toString() || '';
+
+    if (!name || !email) {
+      error = 'El nombre y email son obligatorios';
+    } else {
+      await clientService.create({ name, email, phone, company });
+      return Astro.redirect('/clients');
+    }
+  } catch (e) {
+    console.error('Error al crear cliente:', e);
+    error = 'Error al crear el cliente. Verifica los datos.';
+  }
+}
+---
+
+<Layout title="Nuevo Cliente - SoftControl CRM">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Nuevo Cliente</h1>
+    </div>
+
+    {error && (
+      <div class="alert alert-error">
+        {error}
+      </div>
+    )}
+
+    <div class="card" style="max-width: 600px;">
+      <form method="POST">
+        <Input
+          label="Nombre"
+          name="name"
+          required
+          placeholder="Juan Pérez"
+        />
+        
+        <Input
+          type="email"
+          label="Email"
+          name="email"
+          required
+          placeholder="juan@ejemplo.com"
+        />
+        
+        <Input
+          label="Teléfono"
+          name="phone"
+          placeholder="+34 600 123 456"
+        />
+        
+        <Input
+          label="Empresa"
+          name="company"
+          placeholder="Empresa XYZ S.L."
+        />
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <Button type="submit" variant="primary">
+            Crear Cliente
+          </Button>
+          <a href="/clients" style="text-decoration: none;">
+            <Button type="button" variant="secondary">
+              Cancelar
+            </Button>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .alert-error {
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+</style>

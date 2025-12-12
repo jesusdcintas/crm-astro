@@ -10,8 +10,10 @@
   },
   "dependencies": {
     "@astrojs/node": "^9.5.0",
+    "@stripe/stripe-js": "^8.5.3",
     "@supabase/mcp-server-supabase": "^0.5.8",
     "@supabase/supabase-js": "^2.79.0",
-    "astro": "^5.14.8"
+    "astro": "^5.14.8",
+    "stripe": "^20.0.0"
   }
 }

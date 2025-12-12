@@ -1,0 +1,202 @@
+---
+/**
+ * Formulario para editar licencia
+ */
+import Layout from '../../../layouts/Layout.astro';
+import Input from '../../../components/ui/Input.astro';
+import Select from '../../../components/ui/Select.astro';
+import Button from '../../../components/ui/Button.astro';
+import { licenseService } from '../../../lib/services/licenseService';
+import { clientService } from '../../../lib/services/clientService';
+import { productService } from '../../../lib/services/productService';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/licenses');
+}
+
+let license;
+let clients = [];
+let products = [];
+let error = '';
+
+try {
+  license = await licenseService.getById(id);
+  if (!license) {
+    return Astro.redirect('/licenses');
+  }
+  clients = await clientService.getAll();
+  products = await productService.getAll();
+} catch (e) {
+  console.error('Error al cargar datos:', e);
+  return Astro.redirect('/licenses');
+}
+
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const client_id = formData.get('client_id')?.toString() || '';
+    const product_id = formData.get('product_id')?.toString() || '';
+    const type = formData.get('type')?.toString() as 'licencia_unica' | 'suscripcion';
+    const start_date = formData.get('start_date')?.toString() || '';
+    const end_date = formData.get('end_date')?.toString() || '';
+    const status = formData.get('status')?.toString() as 'activa' | 'inactiva' | 'pendiente_pago';
+
+    if (!client_id || !product_id || !type || !start_date) {
+      error = 'Todos los campos obligatorios deben completarse';
+    } else {
+      await licenseService.update(id, {
+        client_id,
+        product_id,
+        type,
+        start_date,
+        end_date: end_date || undefined,
+        status: status || 'activa'
+      });
+      return Astro.redirect('/licenses');
+    }
+  } catch (e) {
+    console.error('Error al actualizar licencia:', e);
+    error = 'Error al actualizar la licencia. Verifica los datos.';
+  }
+}
+
+const clientOptions = clients.map(c => ({ value: c.id, label: `${c.name} (${c.email})` }));
+const productOptions = products.map(p => ({ value: p.id, label: p.name }));
+---
+
+<Layout title="Editar Licencia - SoftControl CRM">
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Editar Licencia</h1>
+    </div>
+
+    {error && (
+      <div class="alert alert-error">{error}</div>
+    )}
+
+    <div class="card" style="max-width: 600px;">
+      <form method="POST">
+        <Select
+          label="Cliente"
+          name="client_id"
+          options={clientOptions}
+          required
+          value={license.client_id}
+        />
+        
+        <Select
+          label="Producto"
+          name="product_id"
+          options={productOptions}
+          required
+          value={license.product_id}
+        />
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+            Tipo de Licencia <span style="color: var(--color-danger);">*</span>
+          </label>
+          <div style="display: flex; gap: 1.5rem;">
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <input 
+                type="radio" 
+                name="type" 
+                value="licencia_unica" 
+                required 
+                id="type_unica" 
+                checked={license.type === 'licencia_unica'}
+                onchange="toggleEndDate()"
+              />
+              <span>Licencia Única</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+              <input 
+                type="radio" 
+                name="type" 
+                value="suscripcion" 
+                required 
+                id="type_suscripcion" 
+                checked={license.type === 'suscripcion'}
+                onchange="toggleEndDate()"
+              />
+              <span>Suscripción</span>
+            </label>
+          </div>
+        </div>
+
+        <Input
+          type="date"
+          label="Fecha de Inicio"
+          name="start_date"
+          required
+          value={license.start_date}
+        />
+
+        <div id="endDateContainer" style={license.type === 'suscripcion' ? 'display: block;' : 'display: none;'}>
+          <Input
+            type="date"
+            label="Fecha de Fin"
+            name="end_date"
+            id="end_date"
+            value={license.end_date || ''}
+          />
+        </div>
+
+        <div style="margin-bottom: 1rem;">
+          <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+            Estado
+          </label>
+          <select name="status" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-size: 0.9375rem;">
+            <option value="activa" selected={license.status === 'activa'}>Activa</option>
+            <option value="inactiva" selected={license.status === 'inactiva'}>Inactiva</option>
+            <option value="pendiente_pago" selected={license.status === 'pendiente_pago'}>Pendiente de Pago</option>
+          </select>
+        </div>
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <Button type="submit" variant="primary">
+            Guardar Cambios
+          </Button>
+          <a href="/licenses" style="text-decoration: none;">
+            <Button type="button" variant="secondary">
+              Cancelar
+            </Button>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<script>
+  function toggleEndDate() {
+    const typeUnica = document.getElementById('type_unica') as HTMLInputElement;
+    const typeSuscripcion = document.getElementById('type_suscripcion') as HTMLInputElement;
+    const endDateContainer = document.getElementById('endDateContainer');
+    const endDateInput = document.getElementById('end_date') as HTMLInputElement;
+
+    if (typeSuscripcion?.checked) {
+      endDateContainer!.style.display = 'block';
+      endDateInput.required = true;
+    } else {
+      endDateContainer!.style.display = 'none';
+      endDateInput.required = false;
+      endDateInput.value = '';
+    }
+  }
+
+  (window as any).toggleEndDate = toggleEndDate;
+</script>
+
+<style>
+  .alert-error {
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+</style>

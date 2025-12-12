@@ -1,43 +1,21 @@
 import type { APIRoute } from 'astro';
+import { supabase } from '../../../lib/database/supabase';
 
-export const prerender = false;
-
-export const POST: APIRoute = async ({ cookies }) => {
+export const POST: APIRoute = async ({ cookies, redirect }) => {
   try {
-    // Eliminar cookies de sesión
-    cookies.delete('sb-access-token', {
-      path: '/',
-    });
-    
-    cookies.delete('sb-refresh-token', {
-      path: '/',
-    });
-    
-    cookies.delete('sb-user-id', {
-      path: '/',
-    });
+    // Cerrar sesión en Supabase
+    await supabase.auth.signOut();
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        message: 'Sesión cerrada exitosamente',
-      }),
-      { 
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  } catch (error: any) {
-    console.error('Logout error:', error);
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message || 'Error al cerrar sesión',
-      }),
-      { 
-        status: 500,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    // Eliminar cookies
+    cookies.delete('sb-access-token', { path: '/' });
+    cookies.delete('sb-refresh-token', { path: '/' });
+
+    return redirect('/auth/login');
+  } catch (error) {
+    console.error('Error en logout:', error);
+    // Aunque haya error, eliminar cookies y redirigir
+    cookies.delete('sb-access-token', { path: '/' });
+    cookies.delete('sb-refresh-token', { path: '/' });
+    return redirect('/auth/login');
   }
 };

@@ -1,0 +1,173 @@
+---
+/**
+ * Ver detalles de un cliente y sus licencias
+ */
+import Layout from '../../layouts/Layout.astro';
+import Badge from '../../components/ui/Badge.astro';
+import Button from '../../components/ui/Button.astro';
+import { clientService } from '../../lib/services/clientService';
+import { LICENSE_STATUS_LABELS, LICENSE_TYPE_LABELS } from '../../types/crm';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/clients');
+}
+
+let client;
+let error = null;
+
+try {
+  client = await clientService.getWithLicenses(id);
+  
+  if (!client) {
+    return Astro.redirect('/clients');
+  }
+} catch (e) {
+  console.error('Error al obtener cliente:', e);
+  error = 'No se pudo cargar el cliente';
+}
+---
+
+<Layout title={`Cliente: ${client?.name || 'Detalles'} - SoftControl CRM`}>
+  <div class="container">
+    {error && (
+      <div class="alert alert-error">
+        {error}
+      </div>
+    )}
+
+    {client && (
+      <>
+        <div class="page-header">
+          <h1 class="page-title">{client.name}</h1>
+          <div style="display: flex; gap: 1rem;">
+            <a href={`/clients/${id}/edit`}>
+              <Button variant="secondary">Editar Cliente</Button>
+            </a>
+            <a href="/clients">
+              <Button variant="ghost">Volver al Listado</Button>
+            </a>
+          </div>
+        </div>
+
+        <!-- Información del Cliente -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <h2 style="margin-bottom: 1.5rem;">Información del Cliente</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Email</label>
+              <p>{client.email}</p>
+            </div>
+            <div class="info-item">
+              <label>Teléfono</label>
+              <p>{client.phone || '-'}</p>
+            </div>
+            <div class="info-item">
+              <label>Empresa</label>
+              <p>{client.company || '-'}</p>
+            </div>
+            <div class="info-item">
+              <label>Fecha de Registro</label>
+              <p>{new Date(client.created_at).toLocaleDateString('es-ES')}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Licencias del Cliente -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2>Licencias ({client.licenses.length})</h2>
+            <a href={`/licenses/new?client_id=${id}`}>
+              <Button variant="primary">Nueva Licencia</Button>
+            </a>
+          </div>
+
+          {client.licenses.length === 0 ? (
+            <div class="empty-state-small">
+              <p>Este cliente no tiene licencias asignadas</p>
+            </div>
+          ) : (
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th>Tipo</th>
+                    <th>Fecha Inicio</th>
+                    <th>Fecha Fin</th>
+                    <th>Estado</th>
+                    <th>Precio</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {client.licenses.map(license => (
+                    <tr>
+                      <td><strong>{license.product_name}</strong></td>
+                      <td>{LICENSE_TYPE_LABELS[license.type]}</td>
+                      <td>{new Date(license.start_date).toLocaleDateString('es-ES')}</td>
+                      <td>{license.end_date ? new Date(license.end_date).toLocaleDateString('es-ES') : '-'}</td>
+                      <td>
+                        <Badge color={
+                          license.status === 'activa' ? 'green' : 
+                          license.status === 'pendiente_pago' ? 'yellow' : 'gray'
+                        }>
+                          {LICENSE_STATUS_LABELS[license.status]}
+                        </Badge>
+                        {license.is_expired && (
+                          <Badge color="red" style="margin-left: 0.5rem;">Vencida</Badge>
+                        )}
+                      </td>
+                      <td>{license.price.toFixed(2)} €</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </>
+    )}
+  </div>
+</Layout>
+
+<style>
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .info-item label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-text-light);
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .info-item p {
+    font-size: 1rem;
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  .empty-state-small {
+    text-align: center;
+    padding: 2rem;
+    color: var(--color-text-light);
+    background: var(--color-bg-alt);
+    border-radius: var(--radius);
+  }
+
+  .alert-error {
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+</style>

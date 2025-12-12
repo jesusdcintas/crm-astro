@@ -1,210 +1,156 @@
+// ============================================
+// SERVICIO DE AUTENTICACIÓN - MINI-CRM SOFTCONTROL
+// ============================================
+
 import { supabase } from '../database/supabase';
-
-export interface AuthResponse {
-  success: boolean;
-  message: string;
-  user?: any;
-  error?: string;
-}
-
-export interface LoginCredentials {
-  email: string;
-  password: string;
-}
-
-export interface SignupCredentials {
-  email: string;
-  password: string;
-  fullName: string;
-}
+import type { Profile, UserRole } from '../../types/crm';
 
 /**
- * Registrar un nuevo usuario en Supabase Auth
+ * Servicio para autenticación y gestión de perfiles
  */
-export async function signup(credentials: SignupCredentials): Promise<AuthResponse> {
-  try {
-    const { data, error } = await supabase.auth.signUp({
-      email: credentials.email,
-      password: credentials.password,
-      options: {
-        data: {
-          full_name: credentials.fullName,
-        },
-      },
-    });
-
-    if (error) {
-      return {
-        success: false,
-        message: 'Error al registrarse',
-        error: error.message,
-      };
-    }
-
-    return {
-      success: true,
-      message: 'Registro exitoso. Por favor, verifica tu correo electrónico.',
-      user: data.user,
-    };
-  } catch (err: any) {
-    return {
-      success: false,
-      message: 'Error inesperado durante el registro',
-      error: err.message,
-    };
-  }
-}
-
-/**
- * Iniciar sesión con email y contraseña
- */
-export async function login(credentials: LoginCredentials): Promise<AuthResponse> {
-  try {
+export const authService = {
+  /**
+   * Iniciar sesión con email y contraseña
+   */
+  async signIn(email: string, password: string) {
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: credentials.email,
-      password: credentials.password,
+      email,
+      password
     });
 
     if (error) {
-      return {
-        success: false,
-        message: 'Error al iniciar sesión',
-        error: error.message,
-      };
+      console.error('Error al iniciar sesión:', error);
+      throw new Error(error.message);
     }
 
-    return {
-      success: true,
-      message: 'Inicio de sesión exitoso',
-      user: data.user,
-    };
-  } catch (err: any) {
-    return {
-      success: false,
-      message: 'Error inesperado durante el inicio de sesión',
-      error: err.message,
-    };
-  }
-}
+    return data;
+  },
 
-/**
- * Cerrar sesión del usuario actual
- */
-export async function logout(): Promise<AuthResponse> {
-  try {
+  /**
+   * Cerrar sesión
+   */
+  async signOut() {
     const { error } = await supabase.auth.signOut();
 
     if (error) {
-      return {
-        success: false,
-        message: 'Error al cerrar sesión',
-        error: error.message,
-      };
+      console.error('Error al cerrar sesión:', error);
+      throw new Error(error.message);
+    }
+  },
+
+  /**
+   * Obtener el usuario actual
+   */
+  async getCurrentUser() {
+    const { data: { user }, error } = await supabase.auth.getUser();
+
+    if (error) {
+      console.error('Error al obtener usuario:', error);
+      throw new Error(error.message);
     }
 
-    return {
-      success: true,
-      message: 'Sesión cerrada exitosamente',
-    };
-  } catch (err: any) {
-    return {
-      success: false,
-      message: 'Error inesperado al cerrar sesión',
-      error: err.message,
-    };
-  }
-}
+    return user;
+  },
 
-/**
- * Obtener el usuario actual
- */
-export async function getCurrentUser() {
-  try {
-    const { data, error } = await supabase.auth.getUser();
+  /**
+   * Obtener el perfil del usuario actual
+   */
+  async getCurrentProfile(): Promise<Profile | null> {
+    const user = await this.getCurrentUser();
 
-    if (error || !data.user) {
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Error al obtener perfil:', error);
       return null;
     }
 
-    return data.user;
-  } catch (err) {
-    return null;
-  }
-}
+    return data;
+  },
 
-/**
- * Obtener la sesión actual
- */
-export async function getCurrentSession() {
-  try {
-    const { data, error } = await supabase.auth.getSession();
+  /**
+   * Verificar si el usuario actual es administrador
+   */
+  async isAdmin(): Promise<boolean> {
+    const profile = await this.getCurrentProfile();
+    return profile?.role === 'admin';
+  },
 
-    if (error || !data.session) {
-      return null;
-    }
+  /**
+   * Verificar si el usuario actual es staff
+   */
+  async isStaff(): Promise<boolean> {
+    const profile = await this.getCurrentProfile();
+    return profile?.role === 'staff';
+  },
 
-    return data.session;
-  } catch (err) {
-    return null;
-  }
-}
+  /**
+   * Obtener el rol del usuario actual
+   */
+  async getCurrentRole(): Promise<UserRole | null> {
+    const profile = await this.getCurrentProfile();
+    return profile?.role || null;
+  },
 
-/**
- * Restablecer contraseña
- */
-export async function resetPassword(email: string): Promise<AuthResponse> {
-  try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${import.meta.env.PUBLIC_SITE_URL || 'http://localhost:3000'}/auth/reset-password`,
+  /**
+   * Registrar un nuevo usuario (solo para admin)
+   */
+  async signUp(email: string, password: string, fullName: string, role: UserRole = 'staff') {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: fullName,
+          role: role
+        }
+      }
     });
 
     if (error) {
-      return {
-        success: false,
-        message: 'Error al enviar enlace de restablecimiento',
-        error: error.message,
-      };
+      console.error('Error al registrar usuario:', error);
+      throw new Error(error.message);
     }
 
-    return {
-      success: true,
-      message: 'Se ha enviado un enlace de restablecimiento a tu correo electrónico',
-    };
-  } catch (err: any) {
-    return {
-      success: false,
-      message: 'Error inesperado al restablecer contraseña',
-      error: err.message,
-    };
-  }
-}
+    return data;
+  },
 
-/**
- * Actualizar contraseña
- */
-export async function updatePassword(newPassword: string): Promise<AuthResponse> {
-  try {
-    const { error } = await supabase.auth.updateUser({
-      password: newPassword,
-    });
+  /**
+   * Actualizar el perfil del usuario actual
+   */
+  async updateProfile(fullName: string): Promise<Profile> {
+    const user = await this.getCurrentUser();
+
+    if (!user) {
+      throw new Error('Usuario no autenticado');
+    }
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .update({ full_name: fullName })
+      .eq('id', user.id)
+      .select()
+      .single();
 
     if (error) {
-      return {
-        success: false,
-        message: 'Error al actualizar contraseña',
-        error: error.message,
-      };
+      console.error('Error al actualizar perfil:', error);
+      throw new Error(error.message);
     }
 
-    return {
-      success: true,
-      message: 'Contraseña actualizada exitosamente',
-    };
-  } catch (err: any) {
-    return {
-      success: false,
-      message: 'Error inesperado al actualizar contraseña',
-      error: err.message,
-    };
+    return data;
+  },
+
+  /**
+   * Verificar si hay una sesión activa
+   */
+  async hasSession(): Promise<boolean> {
+    const { data: { session } } = await supabase.auth.getSession();
+    return session !== null;
   }
-}
+};

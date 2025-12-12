@@ -1,0 +1,122 @@
+---
+/**
+ * Formulario para editar cliente
+ */
+import Layout from '../../../layouts/Layout.astro';
+import Input from '../../../components/ui/Input.astro';
+import Button from '../../../components/ui/Button.astro';
+import { clientService } from '../../../lib/services/clientService';
+
+const { id } = Astro.params;
+
+if (!id) {
+  return Astro.redirect('/clients');
+}
+
+let client;
+let error = '';
+
+// Obtener cliente
+try {
+  client = await clientService.getById(id);
+  
+  if (!client) {
+    return Astro.redirect('/clients');
+  }
+} catch (e) {
+  console.error('Error al obtener cliente:', e);
+  return Astro.redirect('/clients');
+}
+
+// Si es POST, actualizar el cliente
+if (Astro.request.method === 'POST') {
+  try {
+    const formData = await Astro.request.formData();
+    const name = formData.get('name')?.toString() || '';
+    const email = formData.get('email')?.toString() || '';
+    const phone = formData.get('phone')?.toString() || '';
+    const company = formData.get('company')?.toString() || '';
+
+    if (!name || !email) {
+      error = 'El nombre y email son obligatorios';
+    } else {
+      await clientService.update(id, { name, email, phone, company });
+      return Astro.redirect(`/clients/${id}`);
+    }
+  } catch (e) {
+    console.error('Error al actualizar cliente:', e);
+    error = 'Error al actualizar el cliente. Verifica los datos.';
+  }
+}
+---
+
+<Layout title={`Editar: ${client.name} - SoftControl CRM`}>
+  <div class="container">
+    <div class="page-header">
+      <h1 class="page-title">Editar Cliente</h1>
+    </div>
+
+    {error && (
+      <div class="alert alert-error">
+        {error}
+      </div>
+    )}
+
+    <div class="card" style="max-width: 600px;">
+      <form method="POST">
+        <Input
+          label="Nombre"
+          name="name"
+          required
+          value={client.name}
+          placeholder="Juan Pérez"
+        />
+        
+        <Input
+          type="email"
+          label="Email"
+          name="email"
+          required
+          value={client.email}
+          placeholder="juan@ejemplo.com"
+        />
+        
+        <Input
+          label="Teléfono"
+          name="phone"
+          value={client.phone || ''}
+          placeholder="+34 600 123 456"
+        />
+        
+        <Input
+          label="Empresa"
+          name="company"
+          value={client.company || ''}
+          placeholder="Empresa XYZ S.L."
+        />
+
+        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
+          <Button type="submit" variant="primary">
+            Guardar Cambios
+          </Button>
+          <a href={`/clients/${id}`} style="text-decoration: none;">
+            <Button type="button" variant="secondary">
+              Cancelar
+            </Button>
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</Layout>
+
+<style>
+  .alert-error {
+    padding: 1rem;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+  }
+</style>

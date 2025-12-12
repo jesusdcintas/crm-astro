@@ -1,513 +1,267 @@
 // ============================================
-// TIPOS PARA VICTORIA CRM
+// TIPOS TYPESCRIPT - MINI-CRM SOFTCONTROL
 // ============================================
 
 // ============================================
-// 1. CONTACTOS Y LEADS
+// ENUMS Y TIPOS BÁSICOS
 // ============================================
 
-export type ContactType = 'lead' | 'customer' | 'partner' | 'vendor';
-export type ContactStatus = 'new' | 'contacted' | 'qualified' | 'unqualified' | 'active' | 'inactive';
-export type ContactSource = 'website' | 'referral' | 'social_media' | 'event' | 'cold_call' | 'other';
-export type Priority = 'low' | 'medium' | 'high' | 'urgent';
+/**
+ * Roles del sistema
+ * - admin: Acceso total (crear, editar, eliminar)
+ * - staff: Solo lectura
+ */
+export type UserRole = 'admin' | 'staff';
 
-export interface Contact {
+/**
+ * Tipos de licencia
+ * - licencia_unica: Pago único, sin fecha de vencimiento
+ * - suscripcion: Pago recurrente mensual, con fecha de vencimiento
+ */
+export type LicenseType = 'licencia_unica' | 'suscripcion';
+
+/**
+ * Estados de licencia
+ * - activa: Licencia en uso y al día con pagos
+ * - inactiva: Licencia desactivada
+ * - pendiente_pago: Licencia con pago pendiente
+ */
+export type LicenseStatus = 'activa' | 'inactiva' | 'pendiente_pago';
+
+// ============================================
+// INTERFACES DE ENTIDADES
+// ============================================
+
+/**
+ * Perfil de usuario
+ * Extiende la información del usuario de Supabase Auth
+ */
+export interface Profile {
   id: string;
-  user_id: string;
-  
-  // Información básica
-  first_name: string;
-  last_name?: string;
-  email?: string;
-  phone?: string;
-  mobile?: string;
-  
-  // Información de empresa
-  company_name?: string;
-  job_title?: string;
-  website?: string;
-  
-  // Dirección
-  address_line1?: string;
-  address_line2?: string;
-  city?: string;
-  state?: string;
-  postal_code?: string;
-  country?: string;
-  
-  // Clasificación
-  contact_type: ContactType;
-  status: ContactStatus;
-  source?: ContactSource;
-  
-  // Scoring y prioridad
-  score: number;
-  priority: Priority;
-  
-  // Información adicional
-  notes?: string;
-  avatar_url?: string;
-  
-  // Asignación
-  assigned_to?: string;
-  
-  // Timestamps
+  full_name: string;
+  role: UserRole;
   created_at: string;
-  updated_at: string;
-  last_contact_date?: string;
 }
 
-export interface Tag {
+/**
+ * Cliente de SoftControl
+ */
+export interface Client {
   id: string;
-  user_id: string;
   name: string;
-  color: string;
+  email: string;
+  phone: string | null;
+  company: string | null;
   created_at: string;
+  created_by: string | null;
 }
 
-export interface ContactTag {
-  contact_id: string;
-  tag_id: string;
-  created_at: string;
-}
-
-export interface CustomField {
-  id: string;
-  user_id: string;
-  field_name: string;
-  field_type: 'text' | 'number' | 'date' | 'select' | 'multiselect';
-  options?: string[];
-  created_at: string;
-}
-
-export interface ContactCustomValue {
-  id: string;
-  contact_id: string;
-  field_id: string;
-  value: string;
-  created_at: string;
-}
-
-// ============================================
-// 2. OPORTUNIDADES Y PIPELINE
-// ============================================
-
-export type OpportunityStatus = 'open' | 'won' | 'lost' | 'abandoned';
-
-export interface Pipeline {
-  id: string;
-  user_id: string;
-  name: string;
-  description?: string;
-  is_default: boolean;
-  created_at: string;
-}
-
-export interface PipelineStage {
-  id: string;
-  pipeline_id: string;
-  name: string;
-  order_index: number;
-  probability: number;
-  color: string;
-  created_at: string;
-}
-
-export interface Opportunity {
-  id: string;
-  user_id: string;
-  contact_id: string;
-  pipeline_id?: string;
-  stage_id?: string;
-  
-  // Información
-  title: string;
-  description?: string;
-  value: number;
-  currency: string;
-  
-  // Probabilidad y fechas
-  probability: number;
-  expected_close_date?: string;
-  actual_close_date?: string;
-  
-  // Estado
-  status: OpportunityStatus;
-  lost_reason?: string;
-  
-  // Asignación
-  assigned_to?: string;
-  
-  // Timestamps
-  created_at: string;
-  updated_at: string;
-}
-
-// ============================================
-// 3. INTERACCIONES
-// ============================================
-
-export type InteractionType = 'call' | 'email' | 'meeting' | 'note' | 'task' | 'sms' | 'whatsapp';
-export type InteractionDirection = 'inbound' | 'outbound';
-export type InteractionOutcome = 'successful' | 'no_answer' | 'voicemail' | 'meeting_scheduled' | 'other';
-
-export interface Interaction {
-  id: string;
-  user_id: string;
-  contact_id: string;
-  opportunity_id?: string;
-  
-  // Tipo
-  type: InteractionType;
-  direction?: InteractionDirection;
-  
-  // Contenido
-  subject?: string;
-  content?: string;
-  
-  // Resultados
-  outcome?: InteractionOutcome;
-  duration?: number;
-  
-  // Metadata
-  metadata?: Record<string, any>;
-  
-  // Timestamps
-  interaction_date: string;
-  created_at: string;
-}
-
-// ============================================
-// 4. TAREAS
-// ============================================
-
-export type TaskType = 'call' | 'email' | 'meeting' | 'follow_up' | 'general';
-export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
-
-export interface Task {
-  id: string;
-  user_id: string;
-  contact_id?: string;
-  opportunity_id?: string;
-  
-  // Información
-  title: string;
-  description?: string;
-  
-  // Tipo y prioridad
-  type: TaskType;
-  priority: Priority;
-  
-  // Estado
-  status: TaskStatus;
-  
-  // Fechas
-  due_date?: string;
-  reminder_date?: string;
-  completed_at?: string;
-  
-  // Asignación
-  assigned_to?: string;
-  
-  // Timestamps
-  created_at: string;
-  updated_at: string;
-}
-
-// ============================================
-// 5. CAMPAÑAS Y EMAIL MARKETING
-// ============================================
-
-export type CampaignType = 'email' | 'sms' | 'social';
-export type CampaignStatus = 'draft' | 'scheduled' | 'active' | 'paused' | 'completed';
-
-export interface Campaign {
-  id: string;
-  user_id: string;
-  
-  // Información
-  name: string;
-  description?: string;
-  type: CampaignType;
-  
-  // Estado
-  status: CampaignStatus;
-  
-  // Fechas
-  start_date?: string;
-  end_date?: string;
-  
-  // Métricas
-  total_sent: number;
-  total_opened: number;
-  total_clicked: number;
-  total_bounced: number;
-  
-  // Timestamps
-  created_at: string;
-  updated_at: string;
-}
-
-export interface EmailTemplate {
-  id: string;
-  user_id: string;
-  name: string;
-  subject?: string;
-  body_html?: string;
-  body_text?: string;
-  category?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Segment {
-  id: string;
-  user_id: string;
-  name: string;
-  description?: string;
-  filters: Record<string, any>;
-  created_at: string;
-  updated_at: string;
-}
-
-export type CampaignContactStatus = 'pending' | 'sent' | 'opened' | 'clicked' | 'bounced' | 'unsubscribed';
-
-export interface CampaignContact {
-  id: string;
-  campaign_id: string;
-  contact_id: string;
-  status: CampaignContactStatus;
-  sent_at?: string;
-  opened_at?: string;
-  clicked_at?: string;
-  bounced_at?: string;
-  created_at: string;
-}
-
-// ============================================
-// 6. AUTOMATIZACIÓN
-// ============================================
-
-export type WorkflowTriggerType = 
-  | 'contact_created'
-  | 'contact_updated'
-  | 'stage_changed'
-  | 'task_completed'
-  | 'opportunity_won'
-  | 'opportunity_lost'
-  | 'email_opened'
-  | 'email_clicked';
-
-export interface Workflow {
-  id: string;
-  user_id: string;
-  name: string;
-  description?: string;
-  
-  // Trigger
-  trigger_type: WorkflowTriggerType;
-  trigger_conditions?: Record<string, any>;
-  
-  // Acciones
-  actions: WorkflowAction[];
-  
-  // Estado
-  is_active: boolean;
-  
-  // Estadísticas
-  times_triggered: number;
-  last_triggered_at?: string;
-  
-  // Timestamps
-  created_at: string;
-  updated_at: string;
-}
-
-export interface WorkflowAction {
-  type: 'send_email' | 'create_task' | 'update_contact' | 'change_stage' | 'wait' | 'webhook';
-  config: Record<string, any>;
-  order: number;
-}
-
-// ============================================
-// 7. PRODUCTOS
-// ============================================
-
+/**
+ * Producto ofrecido por SoftControl
+ */
 export interface Product {
   id: string;
-  user_id: string;
   name: string;
-  description?: string;
-  sku?: string;
-  price: number;
-  cost: number;
-  currency: string;
-  category?: string;
-  is_active: boolean;
+  description: string | null;
+  price_one_payment: number;
+  price_subscription: number;
   created_at: string;
-  updated_at: string;
 }
 
-export interface OpportunityProduct {
+/**
+ * Licencia asignada a un cliente
+ */
+export interface License {
   id: string;
-  opportunity_id: string;
+  client_id: string;
   product_id: string;
-  quantity: number;
-  unit_price: number;
-  discount: number;
-  total: number;
+  type: LicenseType;
+  start_date: string;
+  end_date: string | null;
+  status: LicenseStatus;
   created_at: string;
 }
 
-// ============================================
-// 8. ARCHIVOS
-// ============================================
+/**
+ * Licencia con información completa (joins)
+ * Incluye datos del cliente y producto
+ */
+export interface LicenseFull extends License {
+  client_name: string;
+  client_email: string;
+  client_company: string | null;
+  product_name: string;
+  product_description: string | null;
+  price: number;
+  is_expired: boolean;
+}
 
-export interface Attachment {
-  id: string;
-  user_id: string;
-  contact_id?: string;
-  opportunity_id?: string;
-  interaction_id?: string;
-  file_name: string;
-  file_type?: string;
-  file_size?: number;
-  file_url: string;
-  created_at: string;
+/**
+ * Cliente con sus licencias
+ */
+export interface ClientWithLicenses extends Client {
+  licenses: LicenseFull[];
 }
 
 // ============================================
-// 9. CONFIGURACIÓN
+// TIPOS PARA FORMULARIOS (DTOs)
 // ============================================
 
-export interface UserSettings {
-  user_id: string;
-  timezone: string;
-  date_format: string;
-  currency: string;
-  language: string;
-  email_notifications: boolean;
-  push_notifications: boolean;
-  settings: Record<string, any>;
-  created_at: string;
-  updated_at: string;
+/**
+ * Datos para crear un cliente
+ */
+export interface CreateClientDTO {
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
 }
 
-// ============================================
-// TIPOS DE FORMULARIOS Y DTOs
-// ============================================
-
-export interface CreateContactDTO {
-  first_name: string;
-  last_name?: string;
+/**
+ * Datos para actualizar un cliente
+ */
+export interface UpdateClientDTO {
+  name?: string;
   email?: string;
   phone?: string;
-  mobile?: string;
-  company_name?: string;
-  job_title?: string;
-  contact_type?: ContactType;
-  status?: ContactStatus;
-  source?: ContactSource;
-  notes?: string;
-  assigned_to?: string;
+  company?: string;
 }
 
-export interface UpdateContactDTO extends Partial<CreateContactDTO> {
-  id: string;
-}
-
-export interface CreateOpportunityDTO {
-  contact_id: string;
-  title: string;
+/**
+ * Datos para crear un producto
+ */
+export interface CreateProductDTO {
+  name: string;
   description?: string;
-  value: number;
-  pipeline_id?: string;
-  stage_id?: string;
-  expected_close_date?: string;
-  assigned_to?: string;
+  price_one_payment: number;
+  price_subscription: number;
 }
 
-export interface CreateTaskDTO {
-  title: string;
+/**
+ * Datos para actualizar un producto
+ */
+export interface UpdateProductDTO {
+  name?: string;
   description?: string;
-  type?: TaskType;
-  priority?: Priority;
-  due_date?: string;
-  contact_id?: string;
-  opportunity_id?: string;
-  assigned_to?: string;
+  price_one_payment?: number;
+  price_subscription?: number;
 }
 
-export interface CreateInteractionDTO {
-  contact_id: string;
-  type: InteractionType;
-  subject?: string;
-  content?: string;
-  direction?: InteractionDirection;
-  outcome?: InteractionOutcome;
-  duration?: number;
-  opportunity_id?: string;
+/**
+ * Datos para crear una licencia
+ */
+export interface CreateLicenseDTO {
+  client_id: string;
+  product_id: string;
+  type: LicenseType;
+  start_date: string;
+  end_date?: string;
+  status?: LicenseStatus;
+}
+
+/**
+ * Datos para actualizar una licencia
+ */
+export interface UpdateLicenseDTO {
+  type?: LicenseType;
+  start_date?: string;
+  end_date?: string;
+  status?: LicenseStatus;
 }
 
 // ============================================
-// TIPOS DE RESPUESTA DE API
+// TIPOS PARA ESTADÍSTICAS
 // ============================================
 
-export interface ApiResponse<T> {
-  success: boolean;
-  data?: T;
-  error?: string;
+/**
+ * Estadísticas del dashboard
+ */
+export interface DashboardStats {
+  total_clients: number;
+  total_products: number;
+  total_licenses: number;
+  active_licenses: number;
+  inactive_licenses: number;
+  pending_payment_licenses: number;
+  expired_licenses: number;
+}
+
+// ============================================
+// TIPOS PARA RESPUESTAS DE API
+// ============================================
+
+/**
+ * Respuesta exitosa de API
+ */
+export interface ApiSuccess<T = any> {
+  success: true;
+  data: T;
   message?: string;
 }
 
-export interface PaginatedResponse<T> {
-  success: boolean;
-  data: T[];
-  pagination: {
-    total: number;
-    page: number;
-    per_page: number;
-    total_pages: number;
-  };
+/**
+ * Respuesta de error de API
+ */
+export interface ApiError {
+  success: false;
+  error: string;
+  details?: any;
+}
+
+/**
+ * Respuesta de API (éxito o error)
+ */
+export type ApiResponse<T = any> = ApiSuccess<T> | ApiError;
+
+// ============================================
+// TIPOS PARA FILTROS
+// ============================================
+
+/**
+ * Filtros para licencias
+ */
+export interface LicenseFilters {
+  status?: LicenseStatus;
+  type?: LicenseType;
+  client_id?: string;
+  product_id?: string;
+  expired?: boolean;
 }
 
 // ============================================
-// TIPOS PARA ANALYTICS Y REPORTES
+// CONSTANTES
 // ============================================
 
-export interface SalesMetrics {
-  total_opportunities: number;
-  total_value: number;
-  won_opportunities: number;
-  won_value: number;
-  lost_opportunities: number;
-  lost_value: number;
-  win_rate: number;
-  average_deal_size: number;
-  average_sales_cycle: number;
-}
+/**
+ * Etiquetas legibles para roles
+ */
+export const ROLE_LABELS: Record<UserRole, string> = {
+  admin: 'Administrador',
+  staff: 'Personal'
+};
 
-export interface PipelineMetrics {
-  stage_id: string;
-  stage_name: string;
-  opportunities_count: number;
-  total_value: number;
-  average_value: number;
-  conversion_rate: number;
-}
+/**
+ * Etiquetas legibles para tipos de licencia
+ */
+export const LICENSE_TYPE_LABELS: Record<LicenseType, string> = {
+  licencia_unica: 'Licencia Única',
+  suscripcion: 'Suscripción'
+};
 
-export interface ActivityMetrics {
-  calls: number;
-  emails: number;
-  meetings: number;
-  tasks_completed: number;
-  tasks_pending: number;
-}
+/**
+ * Etiquetas legibles para estados de licencia
+ */
+export const LICENSE_STATUS_LABELS: Record<LicenseStatus, string> = {
+  activa: 'Activa',
+  inactiva: 'Inactiva',
+  pendiente_pago: 'Pendiente de Pago'
+};
 
-export interface TopPerformer {
-  user_id: string;
-  name: string;
-  opportunities_won: number;
-  total_value: number;
-  activities: number;
-}
+/**
+ * Colores para badges de estado
+ */
+export const LICENSE_STATUS_COLORS: Record<LicenseStatus, string> = {
+  activa: 'green',
+  inactiva: 'gray',
+  pendiente_pago: 'yellow'
+};
