@@ -47,12 +47,18 @@ try {
           <h1 class="page-title">Detalles de Licencia</h1>
           <div style="display: flex; gap: 1rem;">
             {userIsAdmin && (
-              <a href={`/licenses/${id}/edit`}>
-                <Button variant="secondary">Editar</Button>
+              <a href={`/licenses/${id}/edit`} class="btn-edit">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                </svg>
+                Editar
               </a>
             )}
-            <a href="/licenses">
-              <Button variant="ghost">Volver</Button>
+            <a href="/licenses" class="btn-back">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
+              Volver
             </a>
           </div>
         </div>
@@ -311,5 +317,58 @@ try {
     background: #fee2e2;
     color: #991b1b;
     border: 1px solid #fca5a5;
+  }
+
+  .btn-edit {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    background: linear-gradient(135deg, var(--color-primary), #4f46e5);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-edit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+    color: white;
+  }
+
+  .btn-edit svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    background: white;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-back:hover {
+    background: var(--color-bg-alt);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateX(-2px);
+  }
+
+  .btn-back svg {
+    width: 1.25rem;
+    height: 1.25rem;
   }
 </style>

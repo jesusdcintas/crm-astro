@@ -71,29 +71,55 @@ try {
           <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
         </svg>
         <h3>No hay licencias {statusFilter ? `con estado "${LICENSE_STATUS_LABELS[statusFilter]}"` : 'registradas'}</h3>
-        <p>Comienza creando tu primera licencia</p>
-        <a href="/licenses/new" class="btn-primary" style="margin-top: 1rem;">Crear Licencia</a>
+        {userIsAdmin && (
+          <>
+            <p>Comienza creando tu primera licencia</p>
+            <a href="/licenses/new" class="btn-primary" style="margin-top: 1rem;">Crear Licencia</a>
+          </>
+        )}
       </div>
     )}
 
     {!error && licenses.length > 0 && (
       <div class="table-container">
-        <table>
+        <table id="licensesTable">
           <thead>
             <tr>
-              <th>Cliente</th>
-              <th>Producto</th>
-              <th>Tipo</th>
-              <th>Fecha Inicio</th>
-              <th>Fecha Fin</th>
-              <th>Estado</th>
-              <th>Precio</th>
+              <th class="sortable" data-column="clientName">
+                <div class="th-content">Cliente<span class="sort-icon">⇅</span></div>
+              </th>
+              <th class="sortable" data-column="productName">
+                <div class="th-content">Producto<span class="sort-icon">⇅</span></div>
+              </th>
+              <th class="sortable" data-column="type">
+                <div class="th-content">Tipo<span class="sort-icon">⇅</span></div>
+              </th>
+              <th class="sortable" data-column="startDate">
+                <div class="th-content">Fecha Inicio<span class="sort-icon">⇅</span></div>
+              </th>
+              <th class="sortable" data-column="endDate">
+                <div class="th-content">Fecha Fin<span class="sort-icon">⇅</span></div>
+              </th>
+              <th class="sortable" data-column="status">
+                <div class="th-content">Estado<span class="sort-icon">⇅</span></div>
+              </th>
+              <th class="sortable" data-column="price">
+                <div class="th-content">Precio<span class="sort-icon">⇅</span></div>
+              </th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {licenses.map(license => (
-              <tr>
+              <tr
+                data-client-name={license.client_name}
+                data-product-name={license.product_name}
+                data-type={LICENSE_TYPE_LABELS[license.type]}
+                data-start-date={license.start_date}
+                data-end-date={license.end_date || ''}
+                data-status={LICENSE_STATUS_LABELS[license.status]}
+                data-price={license.price}
+              >
                 <td>
                   <strong>{license.client_name}</strong><br/>
                   <small style="color: var(--color-text-light);">{license.client_email}</small>
@@ -180,7 +206,7 @@ try {
   }
 
   .filter {
-    background: white;
+    background: var(--color-bg);
     color: var(--color-text-light);
     border: 1px solid var(--color-border);
   }
@@ -208,7 +234,7 @@ try {
   .empty-state {
     text-align: center;
     padding: 4rem 2rem;
-    background: white;
+    background: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
   }
@@ -257,4 +283,99 @@ try {
     width: 1.25rem;
     height: 1.25rem;
   }
+
+  .sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+  }
+
+  .sortable:hover {
+    background: var(--color-bg-alt);
+  }
+
+  .th-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .sort-icon {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    opacity: 0.5;
+  }
+
+  .sortable.asc .sort-icon::after {
+    content: ' ↑';
+    opacity: 1;
+    color: var(--color-primary);
+  }
+
+  .sortable.desc .sort-icon::after {
+    content: ' ↓';
+    opacity: 1;
+    color: var(--color-primary);
+  }
 </style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const table = document.getElementById('licensesTable');
+    if (!table) return;
+
+    const headers = table.querySelectorAll('th.sortable');
+    const tbody = table.querySelector('tbody');
+    
+    if (!tbody) return;
+
+    headers.forEach(header => {
+      header.addEventListener('click', () => {
+        const column = header.dataset.column;
+        if (!column) return;
+
+        // Toggle sort direction
+        const isAsc = header.classList.contains('asc');
+        
+        // Remove all sort classes
+        headers.forEach(h => h.classList.remove('asc', 'desc'));
+        
+        // Add appropriate class
+        if (isAsc) {
+          header.classList.add('desc');
+        } else {
+          header.classList.add('asc');
+        }
+
+        // Get all rows
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        // Sort rows
+        rows.sort((a, b) => {
+          let aValue = a.dataset[column] || '';
+          let bValue = b.dataset[column] || '';
+
+          // Convert to appropriate type for comparison
+          if (column === 'price') {
+            aValue = parseFloat(aValue) || 0;
+            bValue = parseFloat(bValue) || 0;
+          } else if (column === 'startDate' || column === 'endDate') {
+            aValue = aValue ? new Date(aValue).getTime() : 0;
+            bValue = bValue ? new Date(bValue).getTime() : 0;
+          } else {
+            aValue = aValue.toLowerCase();
+            bValue = bValue.toLowerCase();
+          }
+
+          if (aValue < bValue) return isAsc ? 1 : -1;
+          if (aValue > bValue) return isAsc ? -1 : 1;
+          return 0;
+        });
+
+        // Re-append sorted rows
+        rows.forEach(row => tbody.appendChild(row));
+      });
+    });
+  });
+</script>

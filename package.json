@@ -10,10 +10,17 @@
   },
   "dependencies": {
     "@astrojs/node": "^9.5.0",
+    "@astrojs/telemetry": "^3.3.0",
     "@stripe/stripe-js": "^8.5.3",
     "@supabase/mcp-server-supabase": "^0.5.8",
     "@supabase/supabase-js": "^2.79.0",
+    "array-iterate": "^2.0.1",
     "astro": "^5.14.8",
-    "stripe": "^20.0.0"
+    "character-entities-legacy": "^3.0.0",
+    "chart.js": "^4.5.1",
+    "css-select": "5.1.0",
+    "nth-check": "2.0.1",
+    "stripe": "^20.0.0",
+    "vite": "^7.2.7"
   }
 }

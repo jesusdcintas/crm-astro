@@ -14,6 +14,12 @@ let stats = {
   pending_payment_licenses: 0
 };
 
+// Obtener datos de ventas
+let salesData = {
+  labels: [] as string[],
+  data: [] as number[]
+};
+
 // Obtener perfil del usuario
 const accessToken = Astro.cookies.get('sb-access-token')?.value;
 const userProfile = accessToken ? await getCurrentUserProfile(accessToken) : null;
@@ -21,6 +27,8 @@ const userIsAdmin = isAdmin(userProfile);
 
 try {
   stats = await dashboardService.getStats();
+  salesData = await dashboardService.getSalesData();
+  console.log('Datos de ventas:', salesData);
 } catch (error) {
   console.error('Error al obtener estadísticas:', error);
 }
@@ -87,6 +95,23 @@ try {
       </a>
     </div>
 
+    <!-- Gráfica de Ventas -->
+    <div class="chart-section">
+      <div class="chart-header">
+        <h2>Ventas de Licencias</h2>
+        <div class="chart-filters">
+          <button class="filter-btn" data-interval="7d">7 días</button>
+          <button class="filter-btn" data-interval="30d">30 días</button>
+          <button class="filter-btn" data-interval="3m">3 meses</button>
+          <button class="filter-btn active" data-interval="6m">6 meses</button>
+          <button class="filter-btn" data-interval="12m">12 meses</button>
+        </div>
+      </div>
+      <div class="chart-container">
+        <canvas id="salesChart"></canvas>
+      </div>
+    </div>
+
     <!-- Accesos rápidos - Solo para Admin -->
     {userIsAdmin && (
       <div class="quick-actions">
@@ -140,6 +165,158 @@ try {
   </div>
 </Layout>
 
+<!-- Cargar Chart.js desde CDN -->
+<script is:inline src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script is:inline define:vars={{ salesData }}>
+  let chartInstance = null;
+  
+  // Función para inicializar la gráfica
+  function initChart(data) {
+    console.log('Iniciando gráfica con datos:', data);
+    
+    const ctx = document.getElementById('salesChart');
+    
+    if (!ctx) {
+      console.error('No se encontró el canvas salesChart');
+      return;
+    }
+    
+    if (!data || !data.labels || data.labels.length === 0) {
+      console.error('No hay datos de ventas para mostrar:', data);
+      return;
+    }
+    
+    // Esperar a que Chart.js esté disponible
+    if (typeof Chart === 'undefined') {
+      console.log('Chart.js no está cargado todavía, esperando...');
+      setTimeout(() => initChart(data), 100);
+      return;
+    }
+    
+    console.log('Creando gráfica con Chart.js...');
+    
+    // Destruir la instancia anterior si existe
+    if (chartInstance) {
+      chartInstance.destroy();
+    }
+    
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.labels,
+        datasets: [{
+          label: 'Ventas (€)',
+          data: data.data,
+          borderColor: '#6366f1',
+          backgroundColor: 'rgba(99, 102, 241, 0.1)',
+          borderWidth: 3,
+          fill: true,
+          tension: 0.4,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          pointBackgroundColor: '#6366f1',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: false
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            padding: 12,
+            titleFont: {
+              size: 14
+            },
+            bodyFont: {
+              size: 13
+            },
+            callbacks: {
+              label: function(context) {
+                return 'Ventas: ' + context.parsed.y.toFixed(2) + ' €';
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              callback: function(value) {
+                return value + ' €';
+              }
+            },
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)'
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            }
+          }
+        }
+      }
+    });
+    
+    console.log('Gráfica creada exitosamente');
+  }
+
+  // Función para cargar datos con un intervalo específico
+  async function loadSalesData(interval) {
+    console.log('Cargando datos para intervalo:', interval);
+    
+    try {
+      const response = await fetch(`/api/sales/data?interval=${interval}`);
+      if (!response.ok) {
+        throw new Error('Error al cargar datos de ventas');
+      }
+      
+      const data = await response.json();
+      console.log('Datos recibidos:', data);
+      
+      initChart(data);
+    } catch (error) {
+      console.error('Error al cargar datos de ventas:', error);
+    }
+  }
+
+  // Configurar event listeners para los botones de filtro
+  function setupFilters() {
+    const filterButtons = document.querySelectorAll('.filter-btn');
+    
+    filterButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        // Remover clase active de todos los botones
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        
+        // Agregar clase active al botón clickeado
+        button.classList.add('active');
+        
+        // Cargar datos con el intervalo seleccionado
+        const interval = button.getAttribute('data-interval');
+        loadSalesData(interval);
+      });
+    });
+  }
+
+  // Inicializar cuando el DOM esté listo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      initChart(salesData);
+      setupFilters();
+    });
+  } else {
+    initChart(salesData);
+    setupFilters();
+  }
+</script>
+
 <style>
   .stats-grid {
     display: grid;
@@ -149,7 +326,7 @@ try {
   }
 
   .stat-card {
-    background: white;
+    background: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: 1.5rem;
@@ -217,7 +394,7 @@ try {
   }
 
   .action-card {
-    background: white;
+    background: var(--color-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     padding: 2rem;
@@ -261,6 +438,62 @@ try {
     font-size: 0.9375rem;
   }
 
+  .chart-section {
+    margin: 3rem 0;
+  }
+
+  .chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .chart-header h2 {
+    margin: 0;
+    color: var(--color-text);
+  }
+
+  .chart-filters {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .filter-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--color-border);
+    background: var(--color-bg);
+    border-radius: var(--radius);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-text-light);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .filter-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+  .filter-btn.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: white;
+  }
+
+  .chart-container {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: var(--shadow-sm);
+    height: 400px;
+  }
+
   @media (max-width: 768px) {
     .stats-grid {
       grid-template-columns: 1fr;
@@ -268,6 +501,11 @@ try {
 
     .actions-grid {
       grid-template-columns: 1fr;
+    }
+
+    .chart-container {
+      padding: 1rem;
+      height: 300px;
     }
   }
 </style>

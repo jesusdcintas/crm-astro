@@ -36,68 +36,100 @@ if (Astro.request.method === 'POST') {
   <div class="container">
     <div class="page-header">
       <h1 class="page-title">Nuevo Producto</h1>
+      <a href="/products" class="btn-back">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+        </svg>
+        Volver
+      </a>
     </div>
 
     {error && (
       <div class="alert alert-error">{error}</div>
     )}
 
-    <div class="card" style="max-width: 600px;">
+    <div class="card">
       <form method="POST">
-        <Input
-          label="Nombre del Producto"
-          name="name"
-          required
-          placeholder="Microsoft Office Professional"
-        />
+        <div style="margin-bottom: 1.5rem;">
+          <label for="name" class="form-label">
+            Nombre del Producto <span class="required">*</span>
+          </label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            required
+            placeholder="Nombre del producto"
+            class="form-input"
+          />
+        </div>
         
-        <div style="margin-bottom: 1rem;">
-          <label for="description" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+        <div style="margin-bottom: 1.5rem;">
+          <label for="description" class="form-label">
             Descripción
           </label>
           <textarea
             id="description"
             name="description"
-            rows="3"
-            placeholder="Descripción del producto..."
-            style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-family: inherit; font-size: 0.9375rem;"
+            rows="4"
+            placeholder="Descripción"
+            class="form-textarea"
           ></textarea>
         </div>
         
-        <Input
-          type="number"
-          label="Precio Pago Único (€)"
-          name="price_one_payment"
-          required
-          placeholder="299.99"
-          value="0"
-          step="0.01"
-          min="0"
-        />
+        <div style="margin-bottom: 1.5rem;">
+          <label for="price_one_payment" class="form-label">
+            Precio Pago Único (€) <span class="required">*</span>
+          </label>
+          <input
+            type="number"
+            id="price_one_payment"
+            name="price_one_payment"
+            required
+            placeholder="Precio"
+            value="0"
+            step="0.01"
+            min="0"
+            class="form-input"
+          />
+        </div>
         
-        <Input
-          type="number"
-          label="Precio Suscripción Mensual (€)"
-          name="price_subscription"
-          required
-          placeholder="12.99"
-          value="0"
-          step="0.01"
-          min="0"
-        />
+        <div style="margin-bottom: 1.5rem;">
+          <label for="price_subscription" class="form-label">
+            Precio Suscripción Mensual (€) <span class="required">*</span>
+          </label>
+          <input
+            type="number"
+            id="price_subscription"
+            name="price_subscription"
+            required
+            placeholder="Precio"
+            value="0"
+            step="0.01"
+            min="0"
+            class="form-input"
+          />
+        </div>
 
         <div class="info-box">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="info-icon">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+          </svg>
           <p><strong>Nota:</strong> Puedes establecer uno de los precios en 0 si el producto solo se ofrece en una modalidad.</p>
         </div>
 
-        <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-          <Button type="submit" variant="primary">
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             Crear Producto
-          </Button>
-          <a href="/products" style="text-decoration: none;">
-            <Button type="button" variant="secondary">
-              Cancelar
-            </Button>
+          </button>
+          <a href="/products" class="btn btn-secondary">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            Cancelar
           </a>
         </div>
       </form>
@@ -106,26 +138,136 @@ if (Astro.request.method === 'POST') {
 </Layout>
 
 <style>
+  .card {
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
   .alert-error {
-    padding: 1rem;
+    padding: 1rem 1.25rem;
     border-radius: var(--radius);
     margin-bottom: 1.5rem;
-    background: #fee2e2;
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
     color: #991b1b;
     border: 1px solid #fca5a5;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(185, 28, 28, 0.1);
   }
 
   .info-box {
-    padding: 1rem;
-    background: #e0f2fe;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #e0f2fe, #dbeafe);
     border: 1px solid #7dd3fc;
     border-radius: var(--radius);
     margin-bottom: 1rem;
+  }
+
+  .info-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #0284c7;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
   }
 
   .info-box p {
     margin: 0;
     font-size: 0.875rem;
     color: #075985;
+    line-height: 1.5;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--color-primary), #4f46e5);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-bg-alt);
+    border-color: var(--color-text-light);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-secondary:active {
+    transform: translateY(0);
+  }
+
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    background: white;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-back:hover {
+    background: var(--color-bg-alt);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateX(-2px);
+  }
+
+  .btn-back svg {
+    width: 1.25rem;
+    height: 1.25rem;
   }
 </style>

@@ -22,6 +22,11 @@ const currentPath = Astro.url.pathname;
 		<link rel="preconnect" href="https://fonts.googleapis.com">
 		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+		<script is:inline>
+			// Cargar tema antes de renderizar
+			const theme = localStorage.getItem('theme') || 'light';
+			document.documentElement.setAttribute('data-theme', theme);
+		</script>
 	</head>
 	<body>
 		{showNav && (
@@ -45,6 +50,14 @@ const currentPath = Astro.url.pathname;
 						</a>
 					</div>
 					<div class="nav-actions">
+						<button id="theme-toggle" class="btn-theme" aria-label="Cambiar tema">
+							<svg class="sun-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+							</svg>
+							<svg class="moon-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+							</svg>
+						</button>
 						<form action="/api/auth/logout" method="POST" style="display: inline;">
 							<button type="submit" class="btn-logout">Cerrar Sesión</button>
 						</form>
@@ -55,6 +68,18 @@ const currentPath = Astro.url.pathname;
 		<main class={showNav ? 'with-nav' : ''}>
 			<slot />
 		</main>
+		<script>
+			// Toggle tema
+			const themeToggle = document.getElementById('theme-toggle');
+			if (themeToggle) {
+				themeToggle.addEventListener('click', () => {
+					const currentTheme = document.documentElement.getAttribute('data-theme');
+					const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+					document.documentElement.setAttribute('data-theme', newTheme);
+					localStorage.setItem('theme', newTheme);
+				});
+			}
+		</script>
 	</body>
 </html>
 
@@ -92,6 +117,61 @@ const currentPath = Astro.url.pathname;
 		--radius-xl: 1rem;
 		
 		--transition: all 0.15s ease;
+	}
+
+	[data-theme="dark"] {
+		--color-bg: #111827;
+		--color-bg-alt: #1f2937;
+		--color-bg-dark: #374151;
+		
+		--color-text: #f9fafb;
+		--color-text-light: #d1d5db;
+		--color-text-muted: #9ca3af;
+		
+		--color-border: #374151;
+		--color-border-dark: #4b5563;
+		
+		--shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+		--shadow: 0 1px 3px 0 rgb(0 0 0 / 0.5), 0 1px 2px -1px rgb(0 0 0 / 0.5);
+		--shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+		--shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+		--shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
+	}
+
+	[data-theme="dark"] input,
+	[data-theme="dark"] textarea,
+	[data-theme="dark"] select {
+		background: #1f2937 !important;
+		color: #f9fafb !important;
+		border-color: #374151 !important;
+	}
+
+	[data-theme="dark"] input::placeholder,
+	[data-theme="dark"] textarea::placeholder {
+		color: #6b7280 !important;
+	}
+
+	[data-theme="dark"] .btn-back,
+	[data-theme="dark"] .btn-secondary {
+		background: #1f2937 !important;
+		color: #f9fafb !important;
+		border-color: #374151 !important;
+	}
+
+	[data-theme="dark"] .btn-back:hover,
+	[data-theme="dark"] .btn-secondary:hover {
+		background: #374151 !important;
+		border-color: var(--color-primary) !important;
+	}
+
+	[data-theme="dark"] .card {
+		background: #1f2937 !important;
+		border-color: #374151 !important;
+	}
+
+	[data-theme="dark"] .info-box {
+		background: rgba(59, 130, 246, 0.1) !important;
+		border-color: rgba(59, 130, 246, 0.3) !important;
 	}
 
 	* {
@@ -204,6 +284,60 @@ const currentPath = Astro.url.pathname;
 		color: white;
 	}
 
+	.nav-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.btn-theme {
+		width: 2.5rem;
+		height: 2.5rem;
+		padding: 0;
+		background: transparent;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		color: var(--color-text-light);
+		transition: var(--transition);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		position: relative;
+	}
+
+	.btn-theme:hover {
+		background: var(--color-bg-alt);
+		border-color: var(--color-border-dark);
+		color: var(--color-text);
+	}
+
+	.btn-theme svg {
+		width: 1.25rem;
+		height: 1.25rem;
+		position: absolute;
+		transition: opacity 0.2s ease, transform 0.2s ease;
+	}
+
+	.sun-icon {
+		opacity: 1;
+		transform: rotate(0deg);
+	}
+
+	.moon-icon {
+		opacity: 0;
+		transform: rotate(90deg);
+	}
+
+	[data-theme="dark"] .sun-icon {
+		opacity: 0;
+		transform: rotate(-90deg);
+	}
+
+	[data-theme="dark"] .moon-icon {
+		opacity: 1;
+		transform: rotate(0deg);
+	}
+
 	.btn-logout {
 		padding: 0.625rem 1.25rem;
 		background: transparent;
@@ -300,6 +434,46 @@ const currentPath = Astro.url.pathname;
 
 	tbody tr:hover {
 		background: var(--color-bg-alt);
+	}
+
+	/* Forms */
+	.form-label {
+		display: block;
+		margin-bottom: 0.5rem;
+		font-weight: 500;
+		font-size: 1rem;
+		color: var(--color-text);
+	}
+
+	.required {
+		color: #ef4444;
+	}
+
+	.form-input,
+	.form-textarea,
+	.form-select {
+		width: 100%;
+		padding: 0.75rem 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius);
+		font-family: inherit;
+		font-size: 1rem;
+		background: var(--color-bg);
+		color: var(--color-text);
+		transition: var(--transition);
+	}
+
+	.form-input:focus,
+	.form-textarea:focus,
+	.form-select:focus {
+		outline: none;
+		border-color: var(--color-primary);
+		box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+	}
+
+	.form-input::placeholder,
+	.form-textarea::placeholder {
+		color: var(--color-text-muted);
 	}
 
 	/* Responsive */

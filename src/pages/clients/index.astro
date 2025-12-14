@@ -56,20 +56,45 @@ try {
 
     {!error && clients.length > 0 && (
       <div class="table-container">
-        <table>
+        <table id="clientsTable">
           <thead>
             <tr>
-              <th>Nombre</th>
-              <th>Email</th>
-              <th>Teléfono</th>
-              <th>Empresa</th>
-              <th>Fecha de Registro</th>
+              <th class="sortable" data-column="name">
+                <div class="th-content">
+                  Nombre
+                  <span class="sort-icon">⇅</span>
+                </div>
+              </th>
+              <th class="sortable" data-column="email">
+                <div class="th-content">
+                  Email
+                  <span class="sort-icon">⇅</span>
+                </div>
+              </th>
+              <th class="sortable" data-column="phone">
+                <div class="th-content">
+                  Teléfono
+                  <span class="sort-icon">⇅</span>
+                </div>
+              </th>
+              <th class="sortable" data-column="company">
+                <div class="th-content">
+                  Empresa
+                  <span class="sort-icon">⇅</span>
+                </div>
+              </th>
+              <th class="sortable" data-column="created_at">
+                <div class="th-content">
+                  Fecha de Registro
+                  <span class="sort-icon">⇅</span>
+                </div>
+              </th>
               <th>Acciones</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody id="clientsTableBody">
             {clients.map(client => (
-              <tr>
+              <tr data-name={client.name} data-email={client.email} data-phone={client.phone || ''} data-company={client.company || ''} data-created_at={client.created_at}>
                 <td>
                   <strong>{client.name}</strong>
                 </td>
@@ -190,4 +215,109 @@ try {
     width: 1.25rem;
     height: 1.25rem;
   }
+
+  .sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+  }
+
+  .sortable:hover {
+    background-color: var(--color-bg-alt);
+  }
+
+  .th-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .sort-icon {
+    opacity: 0.3;
+    font-size: 0.875rem;
+    transition: opacity 0.2s;
+  }
+
+  .sortable:hover .sort-icon {
+    opacity: 0.6;
+  }
+
+  .sortable.asc .sort-icon::after {
+    content: ' ↑';
+    opacity: 1;
+    font-weight: bold;
+  }
+
+  .sortable.desc .sort-icon::after {
+    content: ' ↓';
+    opacity: 1;
+    font-weight: bold;
+  }
+
+  .sortable.asc .sort-icon,
+  .sortable.desc .sort-icon {
+    opacity: 1;
+    color: var(--color-primary);
+  }
 </style>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', () => {
+    const table = document.getElementById('clientsTable');
+    const tbody = document.getElementById('clientsTableBody');
+    const headers = table.querySelectorAll('th.sortable');
+    
+    let currentSort = {
+      column: null,
+      direction: 'asc'
+    };
+
+    headers.forEach(header => {
+      header.addEventListener('click', () => {
+        const column = header.dataset.column;
+        
+        // Determinar dirección del ordenamiento
+        if (currentSort.column === column) {
+          currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+          currentSort.column = column;
+          currentSort.direction = 'asc';
+        }
+
+        // Actualizar clases de los encabezados
+        headers.forEach(h => {
+          h.classList.remove('asc', 'desc');
+        });
+        header.classList.add(currentSort.direction);
+
+        // Ordenar filas
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        
+        rows.sort((a, b) => {
+          let aValue = a.dataset[column] || '';
+          let bValue = b.dataset[column] || '';
+
+          // Convertir a minúsculas para comparación de texto
+          if (column !== 'created_at') {
+            aValue = aValue.toLowerCase();
+            bValue = bValue.toLowerCase();
+          }
+
+          // Comparación
+          if (aValue < bValue) {
+            return currentSort.direction === 'asc' ? -1 : 1;
+          }
+          if (aValue > bValue) {
+            return currentSort.direction === 'asc' ? 1 : -1;
+          }
+          return 0;
+        });
+
+        // Limpiar y volver a añadir las filas ordenadas
+        tbody.innerHTML = '';
+        rows.forEach(row => tbody.appendChild(row));
+      });
+    });
+  });
+</script>

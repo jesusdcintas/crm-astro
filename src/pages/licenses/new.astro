@@ -64,6 +64,12 @@ const productOptions = products.map(p => ({ value: p.id, label: p.name }));
   <div class="container">
     <div class="page-header">
       <h1 class="page-title">Nueva Licencia</h1>
+      <a href="/licenses" class="btn-back">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+        </svg>
+        Volver
+      </a>
     </div>
 
     {error && (
@@ -85,63 +91,98 @@ const productOptions = products.map(p => ({ value: p.id, label: p.name }));
     )}
 
     {clients.length > 0 && products.length > 0 && (
-      <div class="card" style="max-width: 600px;">
+      <div class="card">
         <form method="POST" id="licenseForm">
-          <Select
-            label="Cliente"
-            name="client_id"
-            options={clientOptions}
-            required
-            value={preselectedClientId || ''}
-            placeholder="Selecciona un cliente"
-          />
+          <div style="margin-bottom: 1.5rem;">
+            <label for="client_id" class="form-label">
+              Cliente <span class="required">*</span>
+            </label>
+            <select
+              id="client_id"
+              name="client_id"
+              required
+              value={preselectedClientId || ''}
+              class="form-select"
+            >
+              <option value="">Selecciona un cliente</option>
+              {clientOptions.map(option => (
+                <option value={option.value} selected={preselectedClientId === option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           
-          <Select
-            label="Producto"
-            name="product_id"
-            options={productOptions}
-            required
-            placeholder="Selecciona un producto"
-          />
+          <div style="margin-bottom: 1.5rem;">
+            <label for="product_id" class="form-label">
+              Producto <span class="required">*</span>
+            </label>
+            <select
+              id="product_id"
+              name="product_id"
+              required
+              class="form-select"
+            >
+              <option value="">Selecciona un producto</option>
+              {productOptions.map(option => (
+                <option value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
-          <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
-              Tipo de Licencia <span style="color: var(--color-danger);">*</span>
+          <div style="margin-bottom: 1.5rem;">
+            <label class="form-label">
+              Tipo de Licencia <span class="required">*</span>
             </label>
             <div style="display: flex; gap: 1.5rem;">
-              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                <input type="radio" name="type" value="licencia_unica" required id="type_unica" onchange="toggleEndDate()"/>
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 1rem;">
+                <input type="radio" name="type" value="licencia_unica" required id="type_unica" onchange="toggleEndDate()" style="width: 1.125rem; height: 1.125rem;"/>
                 <span>Licencia Única (Pago único)</span>
               </label>
-              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
-                <input type="radio" name="type" value="suscripcion" required id="type_suscripcion" onchange="toggleEndDate()"/>
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 1rem;">
+                <input type="radio" name="type" value="suscripcion" required id="type_suscripcion" onchange="toggleEndDate()" style="width: 1.125rem; height: 1.125rem;"/>
                 <span>Suscripción (Pago mensual)</span>
               </label>
             </div>
           </div>
 
-          <Input
-            type="date"
-            label="Fecha de Inicio"
-            name="start_date"
-            required
-            value={new Date().toISOString().split('T')[0]}
-          />
-
-          <div id="endDateContainer" style="display: none;">
-            <Input
+          <div style="margin-bottom: 1.5rem;">
+            <label for="start_date" style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1rem;">
+              Fecha de Inicio <span style="color: #991b1b;">*</span>
+            </label>
+            <input
               type="date"
-              label="Fecha de Fin"
-              name="end_date"
-              id="end_date"
+              id="start_date"
+              name="start_date"
+              required
+              value={new Date().toISOString().split('T')[0]}
+              style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-family: inherit; font-size: 1rem;"
             />
           </div>
 
-          <div style="margin-bottom: 1rem;">
-            <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+          <div id="endDateContainer" style="display: none; margin-bottom: 1.5rem;">
+            <label for="end_date" style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1rem;">
+              Fecha de Fin
+            </label>
+            <input
+              type="date"
+              id="end_date"
+              name="end_date"
+              style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-family: inherit; font-size: 1rem;"
+            />
+          </div>
+
+          <div style="margin-bottom: 1.5rem;">
+            <label for="status" style="display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1rem;">
               Estado
             </label>
-            <select name="status" style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-size: 0.9375rem;">
+            <select
+              id="status"
+              name="status"
+              style="width: 100%; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-size: 1rem;"
+            >
               <option value="activa">Activa</option>
               <option value="inactiva">Inactiva</option>
               <option value="pendiente_pago">Pendiente de Pago</option>
@@ -149,21 +190,30 @@ const productOptions = products.map(p => ({ value: p.id, label: p.name }));
           </div>
 
           <div class="info-box">
-            <p><strong>Nota:</strong></p>
-            <ul style="margin: 0.5rem 0 0 1.5rem; padding: 0;">
-              <li>Las licencias únicas no requieren fecha de fin (son perpetuas)</li>
-              <li>Las suscripciones deben tener una fecha de fin</li>
-            </ul>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="info-icon">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+            </svg>
+            <div>
+              <p><strong>Nota:</strong></p>
+              <ul>
+                <li>Las licencias únicas no requieren fecha de fin (son perpetuas)</li>
+                <li>Las suscripciones deben tener una fecha de fin</li>
+              </ul>
+            </div>
           </div>
 
-          <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-            <Button type="submit" variant="primary">
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
               Crear Licencia
-            </Button>
-            <a href="/licenses" style="text-decoration: none;">
-              <Button type="button" variant="secondary">
-                Cancelar
-              </Button>
+            </button>
+            <a href="/licenses" class="btn btn-secondary">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              Cancelar
             </a>
           </div>
         </form>
@@ -194,40 +244,158 @@ const productOptions = products.map(p => ({ value: p.id, label: p.name }));
 </script>
 
 <style>
+  .card {
+    background: white;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
   .alert-error {
-    padding: 1rem;
+    padding: 1rem 1.25rem;
     border-radius: var(--radius);
     margin-bottom: 1.5rem;
-    background: #fee2e2;
+    background: linear-gradient(135deg, #fee2e2, #fecaca);
     color: #991b1b;
     border: 1px solid #fca5a5;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(185, 28, 28, 0.1);
   }
 
   .alert-warning {
-    padding: 1rem;
+    padding: 1rem 1.25rem;
     border-radius: var(--radius);
     margin-bottom: 1.5rem;
-    background: #fef3c7;
+    background: linear-gradient(135deg, #fef3c7, #fde68a);
     color: #92400e;
     border: 1px solid #fcd34d;
+    font-weight: 500;
+    box-shadow: 0 1px 3px rgba(146, 64, 14, 0.1);
   }
 
   .info-box {
-    padding: 1rem;
-    background: #e0f2fe;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 1rem 1.25rem;
+    background: linear-gradient(135deg, #e0f2fe, #dbeafe);
     border: 1px solid #7dd3fc;
     border-radius: var(--radius);
     margin-bottom: 1rem;
   }
 
+  .info-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: #0284c7;
+    flex-shrink: 0;
+    margin-top: 0.125rem;
+  }
+
   .info-box p {
-    margin: 0;
+    margin: 0 0 0.5rem 0;
     font-size: 0.875rem;
     color: #075985;
+  }
+
+  .info-box ul {
+    margin: 0.5rem 0 0 1.5rem;
+    padding: 0;
   }
 
   .info-box ul li {
     font-size: 0.875rem;
     color: #075985;
+    line-height: 1.5;
+    margin-bottom: 0.25rem;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .btn svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--color-primary), #4f46e5);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #4f46e5, #4338ca);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--color-bg-alt);
+    border-color: var(--color-text-light);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .btn-secondary:active {
+    transform: translateY(0);
+  }
+
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.75rem;
+    background: white;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    text-decoration: none;
+    transition: all 0.2s ease;
+  }
+
+  .btn-back:hover {
+    background: var(--color-bg-alt);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    transform: translateX(-2px);
+  }
+
+  .btn-back svg {
+    width: 1.25rem;
+    height: 1.25rem;
   }
 </style>
